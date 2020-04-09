@@ -1,0 +1,42 @@
+module alu_32 (output reg [31:0] Out, output reg Carry,Zero,Neg,Vflow,
+input [31:0] A,B, input [2:0] Sel, input Cin);
+
+always @(*)
+    begin
+    Out = 32'd0;
+    Carry = 1'b0;
+    Zero = 1'b0;
+    Neg = 1'b0;
+    Vflow = 1'b0;
+    
+    case(Sel)
+    3'b000:  {Carry,Out} = A + B; //suma
+    
+    3'b001:  {Carry,Out} = A + B + Cin; //suma con carry
+        
+    3'b010:  Out = A - B;  //resta
+        
+    3'b011:  Out = A & B; //bitwise and
+        
+    3'b100:  Out = A | B; //birwise or
+        
+    3'b101:  Out = A >>1; // right shift
+    
+    3'b110:  Out = A <<1; // left shift
+    
+    3'b111:  Out = A ^ B; // xor
+    endcase
+    
+    if(A[31]==B[31] && Out[31] != A[31]) Vflow = 1'b1;
+    
+    if(Out[31]==1) Neg = 1'b1;
+    
+    
+    
+    Zero = (Out==0);
+    
+    end
+    
+    
+    
+endmodule
