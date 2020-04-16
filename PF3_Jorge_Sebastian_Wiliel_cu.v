@@ -67,8 +67,31 @@ module Multiplexer1_4x2(output reg out, input I0, I1, I2, I3, input [1:0] S);
     
 endmodule 
 
+module NextStateAddressSelector(output reg [1:0] M, input Sts, input [2:0] N);
 
-
+    always @ (*)
+    begin
+        case(N)
+            3'o0: M <= 2'b00; //Encoder
+            3'o1: M <= 2'b01; // ?
+            3'o2: M <= 2'b10; //Control Register
+            3'o3: M <= 2'b11; // Incrementer
+            3'o4: begin 
+                    M[1] = ~Sts;
+                    M[0] = 1'b0;
+                  end
+            3'o5: begin 
+                    M[1] = 1'b0;
+                    M[0] = ~Sts;
+                  end
+            3'o6: begin 
+                    M[1] = ~Sts;
+                    M[0] = ~Sts;
+                  end
+            3'o7: M <= 2'b00;
+        endcase
+        end
+endmodule
 
 // module register32bit(output reg [31:0] Q, input [31:0] D, input clk, ld);
 // initial Q <= 32'd0;
