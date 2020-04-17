@@ -8,13 +8,20 @@ wire [32:0] CRout;
 wire [31:0] IR;
 reg [31:0] IRin;
 reg Cond, MOC, clk, LE, reset;
+wire [6:0] State;
 
 InstructionRegister instruc_reg(IR, IRin, LE, clk);
 
-ControlUnit cu(CRout, IR, Cond, MOC, reset, clk);
+ControlUnit cu(CRout, State, IR, Cond, MOC, reset, clk);
 
 //simulation time
 initial #sim_time $finish;
+
+initial begin
+    MOC = 1'b1;
+    Cond = 1'b1;
+end
+
 
 //manejar clock
 initial begin
@@ -47,9 +54,9 @@ end
 initial #1 begin
   $display("Signals to be tested\n");
 
-  $display("CRout                                 IR                                   IRin                               Cond    MOC  reset   clk   Time");
+  $display("CRout                                 IR                                   IRin                               State     Cond    MOC  reset   clk   Time");
   $display("----------------------------------------------------------------------------------------------------------------------------------------------");
-  $monitor("%b     %b     %b     %b     %b     %b,     %b,     %0d",CRout,IR,IRin,Cond,MOC,reset,clk,$time);
+  $monitor("%b     %b     %b     %d     %b     %b,     %b,  %b,   %0d",CRout,IR,IRin,State,Cond,MOC,reset,clk,$time);
 end
 
     
@@ -57,7 +64,7 @@ endmodule
 
 
 
-module ControlUnit(output [32:0] CRout, input [31:0] IR, input Cond, MOC, reset, clk);
+module ControlUnit(output [32:0] CRout, output reg [6:0] State, input [31:0] IR, input Cond, MOC, reset, clk);
 
 wire [6:0] mux7Out;
 wire mux1Out;
@@ -99,13 +106,17 @@ wire noValue = 0;
 //   S[0] <= CRout[27];
 // end
 
+always@(mux7Out) begin
+    State <= mux7Out;
+end
+
 ControlRegister control_register (CRout, clk, CRin);
 Microstore microstore (CRin, clk, reset, mux7Out);
 NextStateAddressSelector nsas (M, invOut, CRout[32:30]);
 Inverter inv (invOut, mux1Out, CRout[29]);
 Adder adder (AdderOut, mux7Out);
 IncrementerRegister incr_reg (incrementedState, AdderOut, clk);
-Multiplexer7_4x2 mux7_4x2 (mux7Out, EncoderOut, mux7Out, CRout[6:0], incrementedState, M);
+Multiplexer7_4x2 mux7_4x2 (mux7Out, EncoderOut, mux7Out, CRout[6:0], incrementedState, M, reset);
 Multiplexer1_4x2 mux1_4x2 (mux1Out, MOC, Cond, noValue, noValue, CRout[28:27]); //aqui MOC tiene que ir en 0 y Cond en 1
 Encoder encoder (EncoderOut, IR);
 
@@ -115,29 +126,35 @@ module Inverter(output reg out, input in, inv);
     
     always @ (*)
     begin
-        $display("Inv - before changes ---- out %b,  in %b, inv %b", out,in,inv);
+        // $display("Inv - before changes ---- out %b,  in %b, inv %b", out,in,inv);
         case(inv)
             1'b0: out <= in;
             1'b1: out <= ~in;
         endcase
-        $display("Inv - after changes ---- out %b,  in %b, inv %b", out,in,inv);
+        // $display("Inv - after changes ---- out %b,  in %b, inv %b", out,in,inv);
         end
 endmodule
 
 // multiplexer4x2
-module Multiplexer7_4x2(output reg [6:0] out, input [6:0] I0, I1, I2, I3, input [1:0] S);
+module Multiplexer7_4x2(output reg [6:0] out, input [6:0] I0, I1, I2, I3, input [1:0] S, input reset);
 
     always @ (*)
     begin
-        $display("Mux7 - before changes ---- out %b,  I0 %b, I1 %b, I2 %b, I3 %b, S %b", out,I0,I1,I2,I3,S);
+        if(reset) 
+        begin
+            out = 0;
+        end
+        else begin
+        // $display("Mux7 - before changes ---- out %b,  I0 %b, I1 %b, I2 %b, I3 %b, S %b", out,I0,I1,I2,I3,S);
         case(S)
             2'h0: out <= I0;
             2'h1: out <= I1;
             2'h2: out <= I2;
             2'h3: out <= I3;
         endcase
-        $display("Mux7 - after changes ---- out %b,  I0 %b, I1 %b, I2 %b, I3 %b, S %b", out,I0,I1,I2,I3,S);
+        // $display("Mux7 - after changes ---- out %b,  I0 %b, I1 %b, I2 %b, I3 %b, S %b", out,I0,I1,I2,I3,S);
         end
+    end
     
 endmodule 
 
@@ -195,7 +212,7 @@ module Adder(output reg [6:0] out, input [6:0] in);
 
 always@(in)
 
-out = in + 1;
+out = in + 1'b1;
 endmodule
 //---------------------------//-----------------------//
 module InstructionRegister(output reg [31:0] Q, input [31:0] D, input LE, Clk);
@@ -266,7 +283,7 @@ module Microstore (output reg [32:0] Out, input Clk, input reset, input wire [6:
     // always @ (posedge Clk, reset, Address) begin
     always @ (*) begin
         //#2 
-        $display("Microstore - before changes ---- out %b,  Clk %b, reset %b, Address %b", Out, Clk, reset, Address);
+        //$display("Microstore - before changes ---- out %b,  Clk %b, reset %b, Address %b", Out, Clk, reset, Address);
         if (reset) begin
         Out <=  Mem[0]; 
         end
@@ -274,7 +291,7 @@ module Microstore (output reg [32:0] Out, input Clk, input reset, input wire [6:
         Out[32:0] <= Mem[Address]; 
         //$display("Microstore output: %b", Out);
         end
-        $display("Microstore - after changes ---- out %b,  Clk %b, reset %b, Address %b", Out, Clk, reset, Address); 
+        //$display("Microstore - after changes ---- out %b,  Clk %b, reset %b, Address %b", Out, Clk, reset, Address); 
     end
 
     initial begin //n2n1n0 inv s1s0 moore cr(6)
@@ -304,33 +321,33 @@ module Microstore (output reg [32:0] Out, input Clk, input reset, input wire [6:
         Mem[12] <= 33'b011000000100000010010000100000000;
         Mem[13] <= 33'b011000000010101000011100000000000;
         Mem[14] <= 33'b011000000000100000000000000000000;
-        Mem[15] <= 33'b111000_00000010000000000000_0000001;
+        Mem[15] <= 33'b111000000000100000000000000000001;
         
-        // //STRB reg offset ADD
-        // Mem[16] <= 33'b0000000000110000000000000010000000010001001101000000;
-        // Mem[17] <= 33'b0000000001110000000000000000000000010001001101000100;
-        // Mem[18] <= 33'b000000000011000000000000000000000000011000000001001000;
-        // Mem[19] <= 33'b000000000011000000000000000000000000101101001101001100;
+        //STRB reg offset ADD
+        Mem[16] <= 33'b011000_00010000000001000100_0000000;
+        Mem[17] <= 33'b011000_00001010100001110000_0000000;
+        Mem[18] <= 33'b011000_00000010000000000000_0000000;
+        Mem[19] <= 33'b111000_00000010000000000000_0000001;
         
-    //     //STRB reg offset SUB
-    //     Mem[20] <= 33'b001000010100001000100010100000000000010000000101010000; 
-    //     Mem[21] <= 33'b0000000000000000000000000000000000000000000000000; 
-    //     Mem[22] <= 33'b000000000101000000000000010000000000010000000101011000;
-    //     Mem[23] <= 33'b000000000001000000000000000010000000010001100101011000;
+        //STRB reg offset SUB
+        Mem[20] <= 33'b011000_00010000000001000010_0000000;
+        Mem[21] <= 33'b011000_00001010100001110000_0000000;
+        Mem[22] <= 33'b011000_00000010000000000000_0000000;
+        Mem[23] <= 33'b111000_00000010000000000000_0000001;
         
     //     //STRB imm pre ADD
-    //     Mem[24] <= 33'b000000000001000000000000000000000000010000000101100000;
-    //     Mem[25] <= 33'b000000000001000000000000000000000000101101100101100100;
-    //     Mem[26] <= 33'b000000000000000000000000000000000000010000000101101000;
-    //     Mem[27] <= 33'b000000000000000000000000001001000010010000000101101100;
-    //     Mem[28] <= 33'b000000000000000000000000001001001000010000000101110010;
+        Mem[24] <= 33'b011000_01000000001001000100_0000000;
+        Mem[25] <= 33'b011000_00010000000001010000_0000000;
+        Mem[26] <= 33'b011000_00001000100001110000_0000000;
+        Mem[27] <= 33'b011000_00000010000000000000_0000000;
+        Mem[28] <= 33'b111000_00000010000000000000_0000001;
         
     //     //STRB imm pre SUB
-    //     Mem[29] <= 33'b000000000000000000000000001001001000010000000101110101;
-    //     Mem[30] <= 33'b000000000000000000010000000000000000010000000101111000;
-    //     Mem[31] <= 33'b000000000000000001000000000000000000010000000101111100;
-    //     Mem[32] <= 33'b000000000000000000001000001000001000010010001010000000;
-    //     Mem[33] <= 33'b000000000000000000000000001000001000010010001010000100;
+        Mem[29] <= 33'b011000_01000000001001000010_0000000;
+        Mem[30] <= 33'b011000_00010000000001010000_0000000;
+        Mem[31] <= 33'b011000_00001000100001110000_0000000;
+    //     Mem[32] <= 33'b011000_01000000001001000100_0000000;
+    //     Mem[33] <= 33'b111000_00000010000000000000_0000001;
        
     //    //STRB Reg pre ADD
     //     Mem[34] <= 33'b000000000000000000000000001000001000010010010110001000;
