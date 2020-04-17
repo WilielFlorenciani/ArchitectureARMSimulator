@@ -411,6 +411,6 @@ endmodule
 
 // module register32bit(output reg [31:0] Q, input [31:0] D, input clk, ld);
 // initial Q <= 32'd0;
-//   always @ (posedge clk)
+//   always @ (posedge Clk)
 //   if(ld) Q <= D;
 // endmodule
