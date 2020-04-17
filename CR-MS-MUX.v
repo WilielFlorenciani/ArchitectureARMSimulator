@@ -26,7 +26,7 @@ ControlRegister cr (crOut, Clk, microOutput);
 
 //Clock
 initial begin
-  Clk = 1'b0;
+  Clk <= 1'b0;
   $display("Initial Clock value: %b, time: %d", Clk, $time);
   repeat(10) #10 Clk = ~Clk;
 end
