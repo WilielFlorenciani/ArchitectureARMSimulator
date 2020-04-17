@@ -19,7 +19,7 @@ initial #sim_time $finish;
 
 initial begin
     MOC = 1'b1;
-    Cond = 1'b1;
+    Cond = 1'b0;
 
     // if(State==3) begin
     // MOC <= 1'b0;
@@ -146,8 +146,8 @@ endmodule
 
 // multiplexer4x2
 module Multiplexer7_4x2(output reg [6:0] out, input [6:0] I0, I1, I2, I3, input [1:0] S, input reset);
-    always @ (S, I3) begin
-    //$display("MUX7 - changes ---- out %b,  I0 %b, I1 %b, I2 %b, I3 %b, S %b   time %0d", out, I0, I1, I2, I3, S, $time);
+    always @ (S,I0,I1,I2,I3) begin
+    $display("MUX7 - changes ---- out %b,  I0 %b, I1 %b, I2 %b, I3 %b, S %b   time %0d", out, I0, I1, I2, I3, S, $time);
     end
 
     always @ (*)
@@ -293,7 +293,7 @@ endmodule
 module Microstore (output reg [32:0] Out, input Clk, input reset, input wire [6:0] Address);
     reg [32:0] Mem[0:64];
     // always @ (posedge Clk, reset, Address) begin
-    always @ (*) begin
+    always @ (posedge Clk) begin
         //#2 
         //$display("Microstore - before changes ---- out %b,  Clk %b, reset %b, Address %b", Out, Clk, reset, Address);
         if (reset) begin
