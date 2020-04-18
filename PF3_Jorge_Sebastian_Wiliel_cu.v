@@ -154,8 +154,8 @@ endmodule
 
 // multiplexer4x2
 module Multiplexer7_4x2(output reg [6:0] out, input [6:0] I0, I1, I2, I3, input [1:0] S, input reset);
-    always @ (S, I3) begin
-    //$display("MUX7 - changes ---- out %b,  I0 %b, I1 %b, I2 %b, I3 %b, S %b   time %0d", out, I0, I1, I2, I3, S, $time);
+    always @ (S,I0,I1,I2,I3) begin
+    $display("MUX7 - changes ---- out %b,  I0 %b, I1 %b, I2 %b, I3 %b, S %b   time %0d", out, I0, I1, I2, I3, S, $time);
     end
 
     always @ (*) begin
