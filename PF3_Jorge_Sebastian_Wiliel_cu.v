@@ -22,26 +22,17 @@ initial begin
     // MOC = 1'b0;
     // Cond = 1'b0;
     Cond = 1'b1;
-
-    // if(State==3) begin
-    // MOC <= 1'b0;
-    // #4 MOC <= 1'b1;
-    // end
-
-    // MOC = 1'b1;
-    // Cond = 1'b1;
 end
 
 
 //manejar clock
 initial begin
   clk <= 1'b0;
-  repeat(1000) #5 clk = ~clk;
+  repeat(20) #5 clk = ~clk;
 end
 
 initial begin
   reset = 1'b1;
-//   #15 reset = ~reset;
 #5 reset = ~reset;
 end
 
@@ -49,10 +40,10 @@ initial begin
   LE <= 1'b1;
 end
 
-initial begin
+initial begin //Instructions to load on Instruction Register for testing 
   
 //   IRin <= 32'b1110_000_0100_0_0110_0100_00001110_0100; //estado 5 - ADD R4,R6,R4,ROR #? --> funciona mas o menos chilling
-//   IRin <= 32'b1110_010_11100_0110_0100_000011100100;// estado 8 STRB R4,[R6,#+?] 
+  IRin <= 32'b1110_010_11100_0110_0100_000011100100;// estado 8 STRB R4,[R6,#+?] 
 //   IRin <= 32'b1110_011_11100_0110_0100_000000000100;// estado 16 STRB register offset ADD
 //    IRin <= 32'b1110_101_01100_0110_0100_000011100100; // estado 64 Branch instruction
 end
@@ -65,10 +56,8 @@ end
 initial #1 begin
   $display("Signals to be tested\n");
   $monitor("CRout:%b, IR:%b, State:%0d, Cond:%b, MOC:%b, reset:%b, clk:%b, time:%0d",CRout[32:0],IR,curr_state,Cond,MOC,reset,clk,$time);
-// $monitor("CRout:%b, IR:%b, State:%0d, Cond:%b, MOC:%b, reset:%b, clk:%b, time:%0d",CRout,IR,CRout[39:33],Cond,MOC,reset,clk,$time);
 end
 endmodule
-
 
 
 module ControlUnit(output [32:0] CRout, output [6:0] curr_state, input [31:0] IR, input Cond, MOC, reset, clk);
@@ -84,22 +73,25 @@ wire [1:0] M;
 wire noValue = 0;
 wire [6:0] val1 = 1;
 
-// always@(*) begin
+// always @ (*) begin
+//     FRld <= CR[x]
 //     RFld <= CR[x]
 //     IRld <= CR[x]
 //     MARld <= CR[x]
 //     MDRld <= CR[x]
 //     R_W <= CR[x]
 //     MOV <= CR[x]
-//     MOC <= CR[x]
-//     FRld <= CR[x]
 //     Cin <= CR[x]
-//     Cond <= CR[x]
 //     MA <= CR[:]
 //     MB <= CR[:]
 //     MC <= CR[:]
 //     MD <= CR[:]
 //     ME <= CR[:]
+//     OP4 <= CR[x]
+//     OP3 <= CR[x]
+//     OP2 <= CR[x]
+//     OP1 <= CR[x]
+//     OP0 <= CR[x]
 // end
 
 
@@ -113,10 +105,6 @@ IncrementerRegister incr_reg (incrementedState, AdderOut, clk);
 Multiplexer1_4x2 mux1_4x2 (mux1Out, MOC, Cond, noValue, noValue, CRout[28:27]); //aqui MOC tiene que ir en 0 y Cond en 1
 Encoder encoder (EncoderOut, IR);
 
-// initial begin
-// $monitor("CU_monitor: MuxOut = %d", mux7Out); ---
-// end
-
 endmodule
 
 module Inverter(output reg out, input in, inv);
@@ -128,34 +116,27 @@ endmodule
 
 // multiplexer4x2
 module Multiplexer7_4x2(output reg [6:0] out, input [6:0] I0, I1, I2, I3, input [1:0] S, input reset);
-    always @ (S,I0,I1,I2,I3) begin
-    // $display("MUX7 - changes ---- out %b,  I0 %b, I1 %b, I2 %b, I3 %b, S %b   time %0d", out, I0, I1, I2, I3, S, $time); ---
-    end
 
     always @ (*) begin
-    // always @ (S, reset) begin
         if(reset) 
         begin
-            // out = 0; //maybe make this <=?
             out <= 0;
             // $display("~~~ mux is outputting 0 because of reset ~~~");
         end
         else begin
-        // $display("Mux7 - before changes ---- out %b,  I0 %b, I1 %b, I2 %b, I3 %b, S %b", out,I0,I1,I2,I3,S);
         case(S)
             2'h0: out <= I0;
             2'h1: out <= I1;
             2'h2: out <= I2;
             2'h3: out <= I3;
         endcase
-        $display("__Mux7 - out:%d,  enc:%d, same:%d, cr:%d, inc:%d, S:%b,       t:%0d", out,I0,I1,I2,I3,S,$time); 
+        // $display("__Mux7 - out:%d,  enc:%d, same:%d, cr:%d, inc:%d, S:%b,       t:%0d", out,I0,I1,I2,I3,S,$time); 
         end
     end
     
 endmodule 
 
 module Multiplexer1_4x2(output reg out, input I0, I1, I2, I3, input [1:0] S);
-
     always @ (*)
     begin
         case(S)
@@ -165,12 +146,9 @@ module Multiplexer1_4x2(output reg out, input I0, I1, I2, I3, input [1:0] S);
             2'h3: out <= I3;
         endcase
         end
-    
 endmodule 
 
 module NextStateAddressSelector(output reg [1:0] M, input Sts, input [2:0] N);
-
-    // always @ (*) begin
     always @ (Sts, N) begin
         case(N)
             3'o0: M <= 2'b00; //Encoder
@@ -195,41 +173,28 @@ module NextStateAddressSelector(output reg [1:0] M, input Sts, input [2:0] N);
                   end
         endcase
 
-        $display("__NSAS - out:%b, Ns:%b, Sts:%b                                     t:%0d", M, N, Sts, $time); 
+        // $display("__NSAS - out:%b, Ns:%b, Sts:%b                                     t:%0d", M, N, Sts, $time); 
         end
-
-    initial begin
-    $monitor("__NSAS - out:%b, Ns:%b, Sts:%b                                     t:%0d", M, N, Sts, $time); 
-    end
-
 endmodule
 
 module IncrementerRegister(output reg [6:0] Q, input [6:0] D, input  Clk);
-
 always @(posedge Clk)
     Q <= D;
-
 endmodule
-//---------------------------//-----------------------//
-module Adder(output reg [6:0] out, input [6:0] in);
 
+module Adder(output reg [6:0] out, input [6:0] in);
 always @(in)
     out <= in + 1'b1;
 // $display("__Adder input: %d, Adder output: %d", in, out); ---
-
 endmodule
-//---------------------------//-----------------------//
-module InstructionRegister(output reg [31:0] Q, input [31:0] D, input LE, Clk);
 
+module InstructionRegister(output reg [31:0] Q, input [31:0] D, input LE, Clk);
 always @(posedge Clk)
     if(LE) Q <= D;
 endmodule
-//------------------------//--------------------------//
+
 module Encoder(output reg [6:0] Out, input [31:0] Instruction);
-
-always @(Instruction)
-begin
-
+always @(Instruction) begin
 case(Instruction[27:25])
     3'b001: begin
             if(Instruction[24:21] == 4'b0100)
@@ -275,12 +240,8 @@ endcase
 end
 endmodule
 
-
-
 module Microstore (output reg [32:0] out, output reg [6:0] current_state, input reset, input [6:0] next_state);
     //n2n1n0 inv s1s0 moore cr(6)
-        
-        
         parameter[0:33 * 65 - 1] CR_states = {
         33'b011000010000000110110011010000000, //0
         33'b011000000100010000010100000000000, //1
