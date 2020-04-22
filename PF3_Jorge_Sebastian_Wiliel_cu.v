@@ -60,7 +60,7 @@ end
 endmodule
 
 
-module ControlUnit(output [32:0] CRout, output [6:0] curr_state, input [31:0] IR, input Cond, MOC, reset, clk);
+module ControlUnit(output [32:0] CRout, output [6:0] current_state, input [31:0] IR, input Cond, MOC, reset, clk);
 
 wire [6:0] mux7Out;
 wire mux1Out;
@@ -72,6 +72,7 @@ wire [6:0] incrementedState;
 wire [1:0] M;
 wire noValue = 0;
 wire [6:0] val1 = 1;
+wire [6:0] new_state;
 
 // always @ (*) begin
 //     FRld <= CR[x]
@@ -97,8 +98,8 @@ wire [6:0] val1 = 1;
 
 Multiplexer7_4x2 mux7_4x2 (mux7Out, EncoderOut, val1, CRout[6:0], incrementedState, M, reset);
 Adder adder (AdderOut, mux7Out);
-Microstore microstore (CRin, curr_state, reset, mux7Out);
-ControlRegister control_register (CRout, clk, CRin);
+Microstore microstore (CRin, new_state, reset, mux7Out);
+ControlRegister control_register (CRout, current_state, clk, CRin, new_state);
 NextStateAddressSelector nsas (M, invOut, CRout[32:30]);
 Inverter inv (invOut, mux1Out, CRout[29]);
 IncrementerRegister incr_reg (incrementedState, AdderOut, clk);
@@ -323,8 +324,9 @@ begin
 end
 endmodule
 
-module ControlRegister(output reg [32:0] Qs, input Clk, input [32:0] Ds); //32b bus, 20 moore lines, 6 CR and 6 NSAS
+module ControlRegister(output reg [32:0] Qs, output reg [6:0] current_state, input Clk, input [32:0] Ds, input [6:0] next_state); //32b bus, 20 moore lines, 6 CR and 6 NSAS
   always @ (posedge Clk) begin
    Qs <= Ds;
+   current_state <= next_state; 
 end
 endmodule
