@@ -43,9 +43,9 @@ end
 initial begin //Instructions to load on Instruction Register for testing 
   
 //   IRin <= 32'b1110_000_0100_0_0110_0100_00001110_0100; //estado 5 - ADD R4,R6,R4,ROR #? --> funciona mas o menos chilling
-  IRin <= 32'b1110_010_11100_0110_0100_000011100100;// estado 8 STRB R4,[R6,#+?] 
+//   IRin <= 32'b1110_010_11100_0110_0100_000011100100;// estado 8 STRB R4,[R6,#+?] 
 //   IRin <= 32'b1110_011_11100_0110_0100_000000000100;// estado 16 STRB register offset ADD
-//    IRin <= 32'b1110_101_01100_0110_0100_000011100100; // estado 64 Branch instruction
+   IRin <= 32'b1110_101_01100_0110_0100_000011100100; // estado 64 Branch instruction
 end
 
 
@@ -56,6 +56,7 @@ end
 initial #1 begin
   $display("Signals to be tested\n");
   $monitor("CRout:%b, IR:%b, State:%0d, Cond:%b, MOC:%b, reset:%b\nFRld:%b, RFld:%b, IRld:%0d, MARld:%b, MDRld:%b, R/W:%b, MOV:%b, MA1:%b, MA0:%b, MB1:%b, MB0:%b, MC1:%b, MC0:%b, MD:%b, ME:%b, OP4-OP0:%b, Clk:%d, time:%0d\n",CRout[32:0],IR,curr_state,Cond,MOC,reset,CRout[26],CRout[25],CRout[24],CRout[23],CRout[22],CRout[21],CRout[20],CRout[19],CRout[18],CRout[17],CRout[16],CRout[15],CRout[14],CRout[13],CRout[12],CRout[11:7],clk,$time);
+//   $monitor("CRout:%b, IR:%b, State:%0d, Cond:%b, MOC:%b, reset:%b, Clk:%d, time:%0d\n",CRout[32:0],IR,curr_state,Cond,MOC,reset,clk,$time);
 end
 endmodule
 
