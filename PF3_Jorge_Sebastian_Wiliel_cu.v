@@ -51,10 +51,10 @@ end
 
 initial begin
   
-  IRin <= 32'b1110_000_0100_0_0110_0100_00001110_0100; //estado 5 - ADD R4,R6,R4,ROR #?
+//   IRin <= 32'b1110_000_0100_0_0110_0100_00001110_0100; //estado 5 - ADD R4,R6,R4,ROR #? --> funciona mas o menos chilling
 //   IRin <= 32'b1110_010_11100_0110_0100_000011100100;// estado 8 STRB R4,[R6,#+?] 
-//   IRin <= 32'b1110_011_11100_0110_0100_000000000100;// estado 16 STRB register offset ADD
-// #150 IRin <= 32'b1110_101_01100_0110_0100_000011100100; // estado 64 Branch instruction
+  IRin <= 32'b1110_011_11100_0110_0100_000000000100;// estado 16 STRB register offset ADD
+//   IRin <= 32'b1110_101_01100_0110_0100_000011100100; // estado 64 Branch instruction
 end
 
 
@@ -64,8 +64,8 @@ end
 
 initial #1 begin
   $display("Signals to be tested\n");
-//   $monitor("CRout:%b, IR:%b, IRin:%b, State:%d, Cd:%b, Mc:%b, r:%b, cl:%b, t:%0d",CRout[32:0],IR,IRin,CRout[39:33],Cond,MOC,reset,clk,$time);
-$monitor("CRout:%b, IR:%b, State:%0d, Cond:%b, MOC:%b, reset:%b, clk:%b, time:%0d",CRout,IR,CRout[39:33],Cond,MOC,reset,clk,$time);
+  $monitor("CRout:%b, IR:%b, State:%0d, Cond:%b, MOC:%b, reset:%b, clk:%b, time:%0d",CRout[32:0],IR,CRout[39:33],Cond,MOC,reset,clk,$time);
+// $monitor("CRout:%b, IR:%b, State:%0d, Cond:%b, MOC:%b, reset:%b, clk:%b, time:%0d",CRout,IR,CRout[39:33],Cond,MOC,reset,clk,$time);
 end
 endmodule
 
@@ -188,8 +188,13 @@ module NextStateAddressSelector(output reg [1:0] M, input Sts, input [2:0] N);
                   end
         endcase
 
-        // $display("__NSAS - out:%b, Ns:%b, Sts:%b                                     t:%0d", M, N, Sts, $time); 
+        $display("__NSAS - out:%b, Ns:%b, Sts:%b                                     t:%0d", M, N, Sts, $time); 
         end
+
+    initial begin
+    // $monitor("__NSAS - out:%b, Ns:%b, Sts:%b                                     t:%0d", M, N, Sts, $time); 
+    end
+
 endmodule
 
 module IncrementerRegister(output reg [6:0] Q, input [6:0] D, input  Clk);
