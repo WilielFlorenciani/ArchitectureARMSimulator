@@ -720,7 +720,7 @@ module Multiplexer4x2_4(output reg [3:0] Q, input [3:0] I0, I1, I2, I3, input [1
 endmodule 
 
 module Multiplexer2x1_5(output reg [4:0] Q, input [4:0] I0, I1, input S);
-    
+    // if 4-bits añadir el quinto 
     always @ (*)
     begin
         case(S)
@@ -824,8 +824,8 @@ InstructionRegister IR(IRBus, DataOut, IRld, Clk);
 
 alu_32 ALU(aluOut, ALU_flags[3], ALU_flags[2], ALU_flags[1], ALU_flags[0], PA, PB, OP[4:0], noValue_1);
 
-Multiplexer4x2_4 MuxA(A,IRBus[19:16],IRBus[15:12],number15,noValue, MA);
-Multiplexer4x2_4 MuxC(C,IRBus[19:16],IRBus[15:12],number15,noValue, MC);
+Multiplexer4x2_4 MuxA(A,IRBus[19:16],IRBus[15:12],number15,noValue_4, MA);
+Multiplexer4x2_4 MuxC(C,IRBus[19:16],IRBus[15:12],number15,noValue_4, MC);
 Multiplexer2x1_5 MuxD(OP,IRBus[24:21], OP4OP0, MD);
 
 
