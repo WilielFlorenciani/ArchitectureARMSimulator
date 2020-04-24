@@ -1,66 +1,66 @@
-module main;
-//main is used strictly for testing purposes
+// module main;
+// //main is used strictly for testing purposes
     
-parameter sim_time = 1600;
+// parameter sim_time = 1600;
 
 
-wire [32:0] CRout;
-wire [6:0] curr_state;
-wire [31:0] IR;
-reg [31:0] IRin;
-reg Cond, MOC, clk, LE, reset;
+// wire [32:0] CRout;
+// wire [6:0] curr_state;
+// wire [31:0] IR;
+// reg [31:0] IRin;
+// reg Cond, MOC, clk, LE, reset;
 
-InstructionRegister instruc_reg(IR, IRin, LE, clk);
+// InstructionRegister instruc_reg(IR, IRin, LE, clk);
 
-ControlUnit cu(CRout, curr_state, IR, Cond, MOC, reset, clk);
+// ControlUnit cu(CRout, curr_state, IR, Cond, MOC, reset, clk);
 
-//simulation time
-initial #sim_time $finish;
+// //simulation time
+// initial #sim_time $finish;
 
-initial begin
-    MOC = 1'b1;
-    // MOC = 1'b0;
-    // Cond = 1'b0;
-    Cond = 1'b1;
-end
-
-
-//manejar clock
-initial begin
-  clk <= 1'b0;
-  repeat(20) #5 clk = ~clk;
-end
-
-initial begin
-  reset = 1'b1;
-#5 reset = ~reset;
-end
-
-initial begin
-  LE <= 1'b1;
-end
-
-initial begin //Instructions to load on Instruction Register for testing 
-  
-//   IRin <= 32'b1110_000_0100_0_0110_0100_00001110_0100; //estado 5 - ADD R4,R6,R4,ROR #? --> funciona mas o menos chilling
-  IRin <= 32'b1110_010_11100_0110_0100_000011100100;// estado 8 STRB R4,[R6,#+?] 
-//   IRin <= 32'b1110_011_11100_0110_0100_000000000100;// estado 16 STRB register offset ADD
-//    IRin <= 32'b1110_101_01100_0110_0100_000011100100; // estado 64 Branch instruction
-end
+// initial begin
+//     MOC = 1'b1;
+//     // MOC = 1'b0;
+//     // Cond = 1'b0;
+//     Cond = 1'b1;
+// end
 
 
-initial begin
-  $display("\nMicroprocessor Test - Jorge Vega | Sebastian Merced | Wiliel Florenciani \n");
-end
+// //manejar clock
+// initial begin
+//   clk <= 1'b0;
+//   repeat(20) #5 clk = ~clk;
+// end
 
-initial #1 begin
-  $display("Signals to be tested\n");
-  $monitor("CRout:%b, IR:%b, State:%0d, Cond:%b, MOC:%b, reset:%b\nFRld:%b, RFld:%b, IRld:%0d, MARld:%b, MDRld:%b, R/W:%b, MOV:%b, MA1:%b, MA0:%b, MB1:%b, MB0:%b, MC1:%b, MC0:%b, MD:%b, ME:%b, OP4-OP0:%b, Clk:%d, time:%0d\n",CRout[32:0],IR,curr_state,Cond,MOC,reset,CRout[26],CRout[25],CRout[24],CRout[23],CRout[22],CRout[21],CRout[20],CRout[19],CRout[18],CRout[17],CRout[16],CRout[15],CRout[14],CRout[13],CRout[12],CRout[11:7],clk,$time);
-end
-endmodule
+// initial begin
+//   reset = 1'b1;
+// #5 reset = ~reset;
+// end
+
+// initial begin
+//   LE <= 1'b1;
+// end
+
+// initial begin //Instructions to load on Instruction Register for testing 
+//  // E08640E4  E5C640E4    E7C64004    EAC640E4
+// //   IRin <= 8'hE08640E4; //estado 5 - ADD R4,R6,R4,ROR #? --> funciona mas o menos chilling
+//   IRin <= 8'hE5C640E4;// estado 8 STRB R4,[R6,#+?] 
+// //   IRin <= 8'hE7C64004;// estado 16 STRB register offset ADD
+// //    IRin <= 8'hEAC640E4; // estado 64 Branch instruction
+// end
 
 
-module ControlUnit(output [32:0] CRout, output [6:0] current_state, input [31:0] IR, input Cond, MOC, reset, clk);
+// initial begin
+//   $display("\nMicroprocessor Test - Jorge Vega | Sebastian Merced | Wiliel Florenciani \n");
+// end
+
+// initial #1 begin
+//   $display("Signals to be tested\n");
+//   $monitor("CRout:%b, IR:%b, State:%0d, Cond:%b, MOC:%b, reset:%b\nFRld:%b, RFld:%b, IRld:%0d, MARld:%b, MDRld:%b, R/W:%b, MOV:%b, MA1:%b, MA0:%b, MB1:%b, MB0:%b, MC1:%b, MC0:%b, MD:%b, ME:%b, OP4-OP0:%b, Clk:%d, time:%0d\n",CRout[32:0],IR,curr_state,Cond,MOC,reset,CRout[26],CRout[25],CRout[24],CRout[23],CRout[22],CRout[21],CRout[20],CRout[19],CRout[18],CRout[17],CRout[16],CRout[15],CRout[14],CRout[13],CRout[12],CRout[11:7],clk,$time);
+// end
+// endmodule
+
+
+module ControlUnit(output reg FRld, RFld, IRld, MARld, MDRld, R_W , MOV, output [1:0] MA, MB, MC, output MD, ME, output [4:0] OP4OP0, output [6:0] current_state, input [31:0] IR, input Cond, MOC, reset, clk);
 
 wire [6:0] mux7Out;
 wire mux1Out;
@@ -74,26 +74,22 @@ wire noValue = 0;
 wire [6:0] val1 = 1;
 wire [6:0] new_state;
 
-// always @ (*) begin
-//     FRld <= CR[x]
-//     RFld <= CR[x]
-//     IRld <= CR[x]
-//     MARld <= CR[x]
-//     MDRld <= CR[x]
-//     R_W <= CR[x]
-//     MOV <= CR[x]
-//     Cin <= CR[x]
-//     MA <= CR[:]
-//     MB <= CR[:]
-//     MC <= CR[:]
-//     MD <= CR[:]
-//     ME <= CR[:]
-//     OP4 <= CR[x]
-//     OP3 <= CR[x]
-//     OP2 <= CR[x]
-//     OP1 <= CR[x]
-//     OP0 <= CR[x]
-// end
+always @ (*) begin
+    // Cin <= CR[34];
+    FRld <= CR[26];
+    RFld <= CR[25];
+    IRld <= CR[24];
+    MARld <= CR[23];
+    MDRld <= CR[22];
+    R_W <= CR[21];
+    MOV <= CR[20];
+    MA <= CR[19:18];
+    MB <= CR[17:16];
+    MC <= CR[15:14];
+    MD <= CR[13];
+    ME <= CR[12];
+    OP4OP0 <= CR[11:7];
+end
 
 
 Multiplexer7_4x2 mux7_4x2 (mux7Out, EncoderOut, val1, CRout[6:0], incrementedState, M, reset);
@@ -218,7 +214,7 @@ case(Instruction[27:25])
                 begin
                 case(Instruction[24:20])
                     5'b11100:   Out = 7'b0010000;
-                    5'b10100:  Out = 7'b0010100; 
+                    5'b10100:   Out = 7'b0010100; 
                     5'b11110:   Out = 7'b0100010;
                     5'b10110:   Out = 7'b0100010;
                     5'b01100:   Out = 7'b0110110;
@@ -331,19 +327,104 @@ module ControlRegister(output reg [32:0] Qs, output reg [6:0] current_state, inp
 end
 endmodule
 
+//-----------------------------------RAM Begin--------------------------------------------//
 
+module ram512x8(output reg [31:0] DataOut, output reg MOC, input Enable, input ReadWrite, input [31:0] Address, input [31:0] DataIn, input [1:0] OpCode);
+
+  reg [7:0] Mem[0:511]; //512 localizaciones de 8 bits
+  always @ (Enable, ReadWrite) begin
+    MOC <= 0; 
+    if (Enable) begin
+        case (OpCode) 
+            2'b00: begin //opcode for byte operations 
+                if(ReadWrite) begin //read
+                    DataOut[7:0] = Mem[Address];
+                    DataOut[31:8] = 24'h000000;
+                    MOC <= 1; 
+                end else begin  //write
+                    Mem[Address] <= DataIn[7:0];
+                    MOC <= 1;
+                end
+            end
+            2'b01: begin //opcode for halfword operations
+                if(ReadWrite) begin //read
+                    DataOut[31:16] <= Mem[Address];
+                    DataOut[15:8] <= Mem[Address + 1];
+                    DataOut[7:0] <= 16'h0000; 
+                    MOC <= 1;
+                end else begin  //write
+                    Mem[Address] <= DataIn[15:8];
+                    Mem[Address+1] <= DataIn[7:0];
+                    MOC <= 1;
+                end
+            end
+            2'b10: begin //opcode for word operations
+                if(ReadWrite) begin //read
+                    DataOut[31:24] <= Mem[Address];
+                    DataOut[23:16] <= Mem[Address+1];
+                    DataOut[15:8] <= Mem[Address+2];
+                    DataOut[7:0] <= Mem[Address+3];
+                    MOC <= 1;
+                end
+                else begin //write
+                    Mem[Address] <= DataIn[31:24];
+                    Mem[Address+1] <= DataIn[23:16];
+                    Mem[Address+2] <= DataIn[15:8];
+                    Mem[Address+3] <= DataIn[7:0];
+                    MOC <= 1;
+                end
+            end
+            default: begin //default to doubleword if its none of the others
+                if(ReadWrite) begin //read
+                    DataOut[31:24] <= Mem[Address];
+                    DataOut[23:16] <= Mem[Address+1];
+                    DataOut[15:8] <= Mem[Address+2];
+                    DataOut[7:0] <= Mem[Address+3];
+                    #2
+                    DataOut[31:24] <= Mem[Address+4];
+                    DataOut[23:16] <= Mem[Address+5];
+                    DataOut[15:8] <= Mem[Address+6];
+                    DataOut[7:0] <= Mem[Address+7];
+                    MOC <= 1;
+                end
+                else begin //write 
+                    Mem[Address] <= DataIn[31:24];
+                    Mem[Address+1] <= DataIn[23:16];
+                    Mem[Address+2] <= DataIn[15:8];
+                    Mem[Address+3] <= DataIn[7:0];
+                    #2
+                    Mem[Address+4] <= DataIn[31:24];
+                    Mem[Address+5] <= DataIn[23:16];
+                    Mem[Address+6] <= DataIn[15:8];
+                    Mem[Address+7] <= DataIn[7:0];
+                    MOC <= 1;
+                end
+            end
+        endcase 
+    end
+end
+endmodule
+
+//---------------------------------RAM End----------------------------------------------//
+
+module MAR(output reg [31:0] Q, input [31:0] D, input LE, Clk);
+always @(posedge Clk)
+    if(LE) Q <= D;
+endmodule
 
 //----------------------------Register File Begin-----------------------------------------//
 
-module registerfile(output wire [31:0] PA, PB, input [31:0] PC, input clk, rfLd, input [3:0] BD, SA, SB);
+module RegisterFile(output wire [31:0] PA, PB, input [31:0] PC, input [3:0] A, B, C, input clk, rfLd);
 
 wire [15:0] BDselect;
 
 wire [31:0] I0, I1, I2, I3, I4, I5, I6, I7, I8, I9, I10, I11, I12, I13, I14, I15;
 
+always@(I15) begin
+    $display("__R15: %b, Clock:%b, t:%0d", I15, clk, $time);
+end
 
-
-binaryDecoder16bit decoder (BDselect, BD, rfLd);
+binaryDecoder16bit decoder (BDselect, C, rfLd);
 
 register32bit r0 (I0, PC, clk, BDselect[0]);
 register32bit r1 (I1, PC, clk, BDselect[1]);
@@ -360,12 +441,12 @@ register32bit r11 (I11, PC, clk, BDselect[11]);
 register32bit r12 (I12, PC, clk, BDselect[12]);
 register32bit r13 (I13, PC, clk, BDselect[13]);
 register32bit r14 (I14, PC, clk, BDselect[14]);
-register32bit r15 (I15, PC, clk, BDselect[15]);
+register32bit r15 (I15, PC, clk, BDselect[15]); // Program Counter
 
 
-Multiplexer16x4 muxA (PA, I0, I1, I2, I3, I4, I5, I6, I7, I8, I9, I10, I11, I12, I13, I14, I15, SA);
+Multiplexer16x4 muxA (PA, I0, I1, I2, I3, I4, I5, I6, I7, I8, I9, I10, I11, I12, I13, I14, I15, A);
 
-Multiplexer16x4 muxB (PB, I0, I1, I2, I3, I4, I5, I6, I7, I8, I9, I10, I11, I12, I13, I14, I15, SB);
+Multiplexer16x4 muxB (PB, I0, I1, I2, I3, I4, I5, I6, I7, I8, I9, I10, I11, I12, I13, I14, I15, B);
 
 endmodule
 
@@ -431,7 +512,6 @@ initial Q <= 32'd0;
   always @ (posedge clk)
   if(ld) Q <= D;
 endmodule
-
 
 
 
@@ -548,8 +628,7 @@ endmodule
 
 //----------------------------Arithmetic Logic Unit Begin---------------------------------//
 
-module alu_32 (output reg [31:0] Out, output reg Carry,Zero,Neg,Vflow,
-input [31:0] A,B, input [4:0] Sel, input Cin);
+module alu_32 (output reg [31:0] Out, output reg Carry,Zero,Neg,Vflow, input [31:0] A,B, input [4:0] Sel,input Cin);
 
 always @(*)
     begin
@@ -623,3 +702,156 @@ endmodule
 
 
 //----------------------------Arithmetic Logic Unit End-----------------------------------//
+
+//----------------------------MuxA, MuxC------------------------//
+
+module Multiplexer4x2_4(output reg [3:0] Q, input [3:0] I0, I1, I2, I3, input [1:0] S);
+    
+    always @ (*)
+    begin
+        case(S)
+            4'h0: Q <= I0;
+            4'h1: Q <= I1;
+            4'h2: Q <= I2;
+            4'h3: Q <= I3;
+        endcase
+        end
+    
+endmodule 
+
+module Multiplexer2x1_5(output reg [4:0] Q, input [4:0] I0, I1, input S);
+    
+    always @ (*)
+    begin
+        case(S)
+            1'b0: Q <= I0;
+            1'b1: Q <= I1;
+        endcase
+        end
+    
+endmodule 
+
+module Multiplexer4x2_32(output reg [31:0] Q, input [31:0] I0, I1, I2, I3, input [1:0] S);
+    
+    always @ (*)
+    begin
+        case(S)
+            4'h0: Q <= I0;
+            4'h1: Q <= I1;
+            4'h2: Q <= I2;
+            4'h3: Q <= I3;
+        endcase
+        end
+    
+endmodule 
+
+//-------------------------- BEGIN MICROOOOOOOO -----------------------//
+
+module MicroSan; 
+
+//module initialGang; -------- begins initials section
+
+initial begin //initial to precharge ramobj's memory with the file
+    fi = $fopen("PF1_Vega_Rodriguez_Jorge_ramdata.txt","r");
+    Address = 9'b000000000;
+    OpCode = 2'b00;
+    while (!$feof(fi)) begin
+        code = $fscanf(fi, "%x", data);
+        ramobj.Mem[Address] = data;
+        Address = Address + 1;
+    end
+    $fclose(fi);
+end
+
+reg Clk, reset;
+
+initial begin
+  Clk <= 1'b0;
+  repeat(100) #5 Clk = ~Clk;
+end
+
+initial begin
+  reset = 1'b1;
+#5 reset = ~reset;
+end
+
+initial begin
+$display("\n~~~~~~~~Initiating MicroSan simulation~~~~~~~~\n");
+// $monitor("%h    %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b",IR,aluOut,OP,current_state,FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MD, ME, MA, MB, MC,Clk,reset, $time); 
+    $monitor("IR:%b, State:%d, RFld:%b, IRld:%b, MARld:%b, R_W:%b, MOV:%b, MOC:%b, Clk:%b, reset:%b, t:%0d", IR, current_state, RFld, IRld, MARld, R_W, MOV, MOC, Clk, reset, $time);
+end
+
+//endmodule ---------- ends initials section
+
+
+//check if this works
+parameter number15 = 4'b1111;
+parameter noValue_4 = 4'b0000;
+parameter noValue_1 = 1'b0;
+parameter noValue_32 = 32'b0;
+
+//wires de Register File y ALU
+wire [3:0] ALU_flags; // 3-Carry, 2-Zero, 1-Negative, 0-Vflow
+wire [31:0] AluB;
+wire [31:0] PA;
+wire [31:0] PB;
+wire [31:0] aluOut;
+wire [3:0] A;
+wire [3:0] B = IRBus[3:0];
+wire [3:0] C;
+wire [4:0] OP; //muxD output
+//wire [31:0] SASExtender;
+
+//wires de Control Unit
+wire FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MD, ME;
+wire [1:0] MA, MB, MC;
+wire [4:0] OP4OP0;
+wire [6:0] current_state;
+wire [31:0] IRBus;
+wire Cond, MOC;
+
+//wires del RAM 
+wire [31:0] Address;
+//wire [31:0] MDRout;
+wire [31:0] DataOut;
+wire [31:0] DataIn;
+wire [1:0] OpCode;
+
+//module instantiations 
+RegisterFile RF(PA, PB, aluOut, A, B, C, Clk, RFld);
+
+InstructionRegister IR(IRBus, DataOut, IRld, Clk);
+
+alu_32 ALU(aluOut, ALU_flags[3], ALU_flags[2], ALU_flags[1], ALU_flags[0], PA, PB, OP[4:0], noValue_1);
+
+Multiplexer4x2_4 MuxA(A,IRBus[19:16],IRBus[15:12],number15,noValue, MA);
+Multiplexer4x2_4 MuxC(C,IRBus[19:16],IRBus[15:12],number15,noValue, MC);
+Multiplexer2x1_5 MuxD(OP,IRBus[24:21], OP4OP0, MD);
+
+
+ControlUnit CU(FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MA, MB, MC, MD, ME, OP4OP0, current_state, IRBus, Cond, MOC, reset, Clk);
+
+Multiplexer4x2_32 MuxB(AluB, PB, noValue_32, noValue_32, noValue_32 );
+
+MAR Mar(Address, aluOut, MARld, Clk);
+
+ram512x8 RAM(DataOut, MOC, MOV, R_W, Address, DataIn, OpCode);
+
+//MDR Mdr(DataIn, MDRld, MuxEOut, clk);
+
+//ShifterAndSignExtender shifter(SASExtender, IRBus, PB);
+
+//Multiplexer2x1_32 MuxE(OP,IRBus[24:21], OP4OP0, MD);
+
+
+endmodule
+
+// module ShifterAndSignExtender(output reg [31:0] SASExtender, input [31:0] IRBus, Rm);
+
+// endmodule
+//---------------------------ENDDDD MICROOOOOOO -----------------------//
+
+
+
+
+
