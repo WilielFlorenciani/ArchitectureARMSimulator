@@ -1,64 +1,3 @@
-// module main;
-// //main is used strictly for testing purposes
-    
-// parameter sim_time = 1600;
-
-
-// wire [32:0] CRout;
-// wire [6:0] curr_state;
-// wire [31:0] IR;
-// reg [31:0] IRin;
-// reg Cond, MOC, clk, LE, reset;
-
-// InstructionRegister instruc_reg(IR, IRin, LE, clk);
-
-// ControlUnit cu(CRout, curr_state, IR, Cond, MOC, reset, clk);
-
-// //simulation time
-// initial #sim_time $finish;
-
-// initial begin
-//     MOC = 1'b1;
-//     // MOC = 1'b0;
-//     // Cond = 1'b0;
-//     Cond = 1'b1;
-// end
-
-
-// //manejar clock
-// initial begin
-//   clk <= 1'b0;
-//   repeat(20) #5 clk = ~clk;
-// end
-
-// initial begin
-//   reset = 1'b1;
-// #5 reset = ~reset;
-// end
-
-// initial begin
-//   LE <= 1'b1;
-// end
-
-// initial begin //Instructions to load on Instruction Register for testing 
-//  // E08640E4  E5C640E4    E7C64004    EAC640E4
-// //   IRin <= 8'hE08640E4; //estado 5 - ADD R4,R6,R4,ROR #? --> funciona mas o menos chilling
-//   IRin <= 8'hE5C640E4;// estado 8 STRB R4,[R6,#+?] 
-// //   IRin <= 8'hE7C64004;// estado 16 STRB register offset ADD
-// //    IRin <= 8'hEAC640E4; // estado 64 Branch instruction
-// end
-
-
-// initial begin
-//   $display("\nMicroprocessor Test - Jorge Vega | Sebastian Merced | Wiliel Florenciani \n");
-// end
-
-// initial #1 begin
-//   $display("Signals to be tested\n");
-//   $monitor("CRout:%b, IR:%b, State:%0d, Cond:%b, MOC:%b, reset:%b\nFRld:%b, RFld:%b, IRld:%0d, MARld:%b, MDRld:%b, R/W:%b, MOV:%b, MA1:%b, MA0:%b, MB1:%b, MB0:%b, MC1:%b, MC0:%b, MD:%b, ME:%b, OP4-OP0:%b, Clk:%d, time:%0d\n",CRout[32:0],IR,curr_state,Cond,MOC,reset,CRout[26],CRout[25],CRout[24],CRout[23],CRout[22],CRout[21],CRout[20],CRout[19],CRout[18],CRout[17],CRout[16],CRout[15],CRout[14],CRout[13],CRout[12],CRout[11:7],clk,$time);
-// end
-// endmodule
-
 
 module ControlUnit(output reg FRld, RFld, IRld, MARld, MDRld, R_W , MOV, output reg [1:0] MA, MB, MC, output reg MD, ME, output reg [4:0] OP4OP0, output reg [6:0] current_state, input [31:0] IR, input Cond, MOC, reset, clk);
 
@@ -335,7 +274,8 @@ module ram512x8(output reg [31:0] DataOut, output reg MOC, input Enable, input R
 
   reg [7:0] Mem[0:511]; //512 localizaciones de 8 bits
   always @ (Enable, ReadWrite) begin
-    MOC <= 0; 
+    MOC <= 1; //MOC <= 0;
+    $display("__RAM: entered the always, MOC:%b", MOC);
     if (Enable) begin
         case (OpCode) 
             2'b00: begin //opcode for byte operations 
@@ -343,9 +283,11 @@ module ram512x8(output reg [31:0] DataOut, output reg MOC, input Enable, input R
                     DataOut[7:0] = Mem[Address];
                     DataOut[31:8] = 24'h000000;
                     MOC <= 1; 
+                    $display("__RAM: read a byte, DataOut:%b", DataOut);
                 end else begin  //write
                     Mem[Address] <= DataIn[7:0];
                     MOC <= 1;
+                    $display("__RAM: wrote a byte Adr:%b, Mem[Adr]:%b", Address, Mem[Address]);
                 end
             end
             2'b01: begin //opcode for halfword operations
@@ -410,8 +352,12 @@ endmodule
 //---------------------------------RAM End----------------------------------------------//
 
 module MAR(output reg [31:0] Q, input [31:0] D, input LE, Clk);
-always @(posedge Clk)
-    if(LE) Q <= D;
+always @(posedge Clk) begin
+    if(LE) begin 
+        Q <= D;
+    end
+    $display("__MAR: marOut:%b", Q);
+end
 endmodule
 
 //----------------------------Register File Begin-----------------------------------------//
@@ -751,7 +697,6 @@ endmodule
 
 module MicroSan; 
 
-//module initialGang; -------- begins initials section
 parameter number15 = 4'b1111;
 parameter noValue_4 = 4'b0000;
 parameter noValue_1 = 1'b0;
@@ -786,37 +731,68 @@ reg [1:0] OpCode;
 
 integer fi, code, i; reg [7:0] data; reg [31:0] Adr; //variables to handle file info
 
+//////////////////////// INITIALS ///////////////////////
+
 initial begin //initial to precharge ramobj's memory with the file
+    $display("----- Initiating Precharge -----");
     fi = $fopen("PF1_Vega_Rodriguez_Jorge_ramdata.txt","r");
-    Adr = 9'b000000000;
-    OpCode = 2'b00;
+    // Adr = 9'b000000000;
+    Adr = 0;
+    // OpCode = 2'b00;
     while (!$feof(fi)) begin
         code = $fscanf(fi, "%x", data);
         RAM.Mem[Address] = data;
         Adr = Adr + 1;
     end
     $fclose(fi);
+    $display("----- Finished Precharge ----- time:%0d", $time);
+    //  Adr <= 0;
+    // RAM.Mem[Adr] <= 8'hE0; 
+    // RAM.Mem[Adr+1] <= 8'h86;
+    // RAM.Mem[Adr+2] <= 8'h40; 
+    // RAM.Mem[Adr+3] <= 8'hE4;
 end
+
+initial begin //initial to read content of memory after precharging
+#1
+    $display("----- Memory contents after precharging ----- time:%0d", $time);                       
+    Adr = 7'b0000000;
+    repeat (16) begin
+        #1;
+        $display("__RAM_Precharge: data in address %d = %x, time: %0d", Adr, RAM.Mem[Adr], $time);
+        #1;
+        Adr = Adr + 1;
+        #1;
+    end                                     
+    $display("----- END PRECHARGE INFO ----- time:%0d", $time);                                               
+end 
 
 reg Clk, reset;
 
 initial begin
+#50 //so that clock starts when precharge tasks are done 
   Clk <= 1'b0;
-  repeat(100) #5 Clk = ~Clk;
+  repeat(20) #5 Clk = ~Clk;
 end
 
 initial begin
+#50 //so that reset starts when precharge tasks are done 
   reset = 1'b1;
 #5 reset = ~reset;
 end
 
 initial begin
+#50
 $display("\n~~~~~~~~Initiating MicroSan simulation~~~~~~~~\n");
 // $monitor("%h    %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b",IR,aluOut,OP,current_state,FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MD, ME, MA, MB, MC,Clk,reset, $time); 
-    $monitor("IR:%b, State:%d, RFld:%b, IRld:%b, MARld:%b, R_W:%b, MOV:%b, MOC:%b, Clk:%b, reset:%b, t:%0d", IRBus, current_state, RFld, IRld, MARld, R_W, MOV, MOC, Clk, reset, $time);
+    $monitor("IR:%b, State:%d, RFld:%b, MB:%b, OP:%b, IRld:%b, MARld:%b, R_W:%b, MOV:%b, MOC:%b, Clk:%b, reset:%b, t:%0d", IRBus, current_state, RFld, MB, OP4OP0, IRld, MARld, R_W, MOV, MOC, Clk, reset, $time);
 end
 
-//endmodule ---------- ends initials section
+initial begin //initial to set ram's opcode en lo que lo ponemos en el control unit
+OpCode = 2'b10;
+end
+
+/////////////////// END OF INITIALS /////////////////
 
 //module instantiations 
 RegisterFile RF(PA, PB, aluOut, A, B, C, Clk, RFld);
