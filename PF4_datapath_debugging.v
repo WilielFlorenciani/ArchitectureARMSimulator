@@ -67,12 +67,13 @@ wire mux1Out;
 wire [6:0] AdderOut;
 wire [6:0] EncoderOut;
 wire [32:0] CRin;
+wire [32:0] CRout;
 wire invOut;
 wire [6:0] incrementedState;
 wire [1:0] M;
 wire noValue = 0;
 wire [6:0] val1 = 1;
-wire [6:0] new_state;
+wire [6:0] new_state, curr_state;
 
 always @ (*) begin
     // Cin <= CR[34];
@@ -89,13 +90,14 @@ always @ (*) begin
     MD <= CRin[13];
     ME <= CRin[12];
     OP4OP0 <= CRin[11:7];
+    current_state <= curr_state;
 end
 
 
 Multiplexer7_4x2 mux7_4x2 (mux7Out, EncoderOut, val1, CRin[6:0], incrementedState, M, reset); //CRout?
 Adder adder (AdderOut, mux7Out);
 Microstore microstore (CRin, new_state, reset, mux7Out);
-ControlRegister control_register (CRout, current_state, clk, CRin, new_state);//CRout?
+ControlRegister control_register (CRout, curr_state, clk, CRin, new_state);//CRout?
 NextStateAddressSelector nsas (M, invOut, CRin[32:30]);//CRout??
 Inverter inv (invOut, mux1Out, CRin[29]);
 IncrementerRegister incr_reg (incrementedState, AdderOut, clk);
@@ -782,14 +784,16 @@ wire [31:0] DataOut;
 wire [31:0] DataIn;
 reg [1:0] OpCode;
 
+integer fi, code, i; reg [7:0] data; reg [31:0] Adr; //variables to handle file info
+
 initial begin //initial to precharge ramobj's memory with the file
     fi = $fopen("PF1_Vega_Rodriguez_Jorge_ramdata.txt","r");
-    Address = 9'b000000000;
+    Adr = 9'b000000000;
     OpCode = 2'b00;
     while (!$feof(fi)) begin
         code = $fscanf(fi, "%x", data);
-        ramobj.Mem[Address] = data;
-        Address = Address + 1;
+        RAM.Mem[Address] = data;
+        Adr = Adr + 1;
     end
     $fclose(fi);
 end
@@ -823,7 +827,7 @@ alu_32 ALU(aluOut, ALU_flags[3], ALU_flags[2], ALU_flags[1], ALU_flags[0], PA, P
 
 Multiplexer4x2_4 MuxA(A,IRBus[19:16],IRBus[15:12],number15,noValue_4, MA);
 Multiplexer4x2_4 MuxC(C,IRBus[19:16],IRBus[15:12],number15,noValue_4, MC);
-Multiplexer2x1_5 MuxD(OP,IRBus[24:21], OP4OP0, MD);// sale warning de padding, verilog automaticamente hace padding del bit que le falta a 0.
+Multiplexer2x1_5 MuxD(OP,1'b0 + IRBus[24:21], OP4OP0, MD);// sale warning de padding, verilog automaticamente hace padding del bit que le falta a 0.
 
 
 ControlUnit CU(FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MA, MB, MC, MD, ME, OP4OP0, current_state, IRBus, Cond, MOC, reset, Clk);
