@@ -813,7 +813,7 @@ end
 initial begin
 $display("\n~~~~~~~~Initiating MicroSan simulation~~~~~~~~\n");
 // $monitor("%h    %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b",IR,aluOut,OP,current_state,FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MD, ME, MA, MB, MC,Clk,reset, $time); 
-    $monitor("IR:%b, State:%d, RFld:%b, IRld:%b, MARld:%b, R_W:%b, MOV:%b, MOC:%b, Clk:%b, reset:%b, t:%0d", IR, current_state, RFld, IRld, MARld, R_W, MOV, MOC, Clk, reset, $time);
+    $monitor("IR:%b, State:%d, RFld:%b, IRld:%b, MARld:%b, R_W:%b, MOV:%b, MOC:%b, Clk:%b, reset:%b, t:%0d", IRBus, current_state, RFld, IRld, MARld, R_W, MOV, MOC, Clk, reset, $time);
 end
 
 //endmodule ---------- ends initials section
