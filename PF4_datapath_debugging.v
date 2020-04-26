@@ -738,10 +738,10 @@ initial begin //initial to precharge ramobj's memory with the file
     fi = $fopen("PF1_Vega_Rodriguez_Jorge_ramdata.txt","r");
     // Adr = 9'b000000000;
     Adr = 0;
-    // OpCode = 2'b00;
+    OpCode = 2'b10;
     while (!$feof(fi)) begin
         code = $fscanf(fi, "%x", data);
-        RAM.Mem[Address] = data;
+        RAM.Mem[Adr] = data;
         Adr = Adr + 1;
     end
     $fclose(fi);
