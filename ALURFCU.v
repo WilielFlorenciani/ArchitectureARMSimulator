@@ -13,8 +13,8 @@ wire [1:0] MA, MB, MC;
 wire [4:0] OP4OP0;
 wire [6:0] current_state;
 wire [31:0] IRBus;
-// wire Cond, MOC;
-reg Cond, MOC; //registers to simulate the signals
+wire MOC;
+reg Cond; //registers to simulate the signals
 
 //wires de Register File y ALU
 wire [3:0] ALU_flags; // 3-Carry, 2-Zero, 1-Negative, 0-Vflow
@@ -36,10 +36,13 @@ wire [31:0] DataOut;
 wire [31:0] DataIn;
 reg [1:0] OpCode;
 
+integer fi, code, i; reg [7:0] data; reg [31:0] Adr; //variables to handle file info
+
 
 ControlUnit CU(FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MA, MB, MC, MD, ME, OP4OP0, current_state, IRBus, Cond, MOC, reset, Clk);
 RegisterFile RF(PA, PB, aluOut, A, IRBus[3:0], C, Clk, RFld);
 alu_32 ALU(aluOut, ALU_flags[3], ALU_flags[2], ALU_flags[1], ALU_flags[0], PA, AluB, OP[4:0], Cin);
+ram512x8 RAM(DataOut, MOC, MOV, R_W, Address, DataIn, OpCode);
 
 Multiplexer4x2_4 MuxA(A,IRBus[19:16],IRBus[15:12],number15,noValue_4, MA);
 Multiplexer4x2_32 MuxB(AluB, PB, noValue_32, noValue_32, noValue_32, MB );
@@ -52,14 +55,43 @@ MAR Mar(Address, aluOut, MARld, Clk);
 
 /////// BEGIN INITIALS
 
+initial begin //initial to precharge memory with the file
+    $display("----- Initiating Precharge -----");
+    fi = $fopen("PF1_Vega_Rodriguez_Jorge_ramdata.txt","r");
+    // Adr = 9'b000000000;
+    Adr = 0;
+    OpCode = 2'b10;
+    while (!$feof(fi)) begin
+        code = $fscanf(fi, "%x", data);
+        RAM.Mem[Adr] = data;
+        Adr = Adr + 1;
+    end
+    $fclose(fi);
+    $display("----- Finished Precharge ----- time:%0d", $time);
+end
+
+initial begin //initial to read content of memory after precharging
+#1
+    $display("----- Memory contents after precharging ----- time:%0d", $time);                       
+    Adr = 7'b0000000;
+    repeat (16) begin
+        #1;
+        $display("__RAM_Precharge: data in address %d = %x, time: %0d", Adr, RAM.Mem[Adr], $time);
+        #1;
+        Adr = Adr + 1;
+        #1;
+    end                                     
+    $display("----- END PRECHARGE INFO ----- time:%0d", $time);                                               
+end 
+
 initial begin
-// #50 //so that clock starts when precharge tasks are done 
+#50 //so that clock starts when precharge tasks are done 
   Clk <= 1'b0;
   repeat(20) #5 Clk = ~Clk;
 end
 
 initial begin
-// #50 //so that reset starts when precharge tasks are done 
+#50 //so that reset starts when precharge tasks are done 
   reset = 1'b1;
 #5 reset = ~reset;
 end
@@ -67,14 +99,14 @@ end
 initial begin //for signal simulations
 Cin <= 0;
 Cond <= 0; //making it 0 so that it loops back to 1
-MOC <= 1; 
+// MOC <= 1; 
 end
 
 initial begin
-// #50 //delay to wait for precharge things
-$display("\n~~~~~~~~Initiating MicroSan simulation~~~~~~~~\n");
+#50 //delay to wait for precharge things
+$display("\n~~~~~~~~Initiating ALURFCU simulation~~~~~~~~\n");
 // $monitor("%h    %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b",IR,aluOut,OP,current_state,FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MD, ME, MA, MB, MC,Clk,reset, $time); 
-    $monitor("IR:%x, Dout:%x, alO:%b, State:%d, RFld:%b, MA:%b, MB:%b, MC:%b, MD:%b, OP:%b, IRld:%b, MARld:%b, R_W:%b, MOV:%b, MOC:%b, Cond:%b, Clk:%b, reset:%b, t:%0d", IRBus, DataOut, aluOut, current_state, RFld, MA, MB, MC, MD, OP4OP0, IRld, MARld, R_W, MOV, MOC, Cond, Clk, reset, $time);
+    $monitor("IR:%x, Dout:%x, State:%d, RFld:%b, MA:%b, MB:%b, MC:%b, MD:%b, OP:%b, IRld:%b, MARld:%b, R_W:%b, MOV:%b, MOC:%b, Cond:%b, Clk:%b, reset:%b, t:%0d", IRBus, DataOut, current_state, RFld, MA, MB, MC, MD, OP4OP0, IRld, MARld, R_W, MOV, MOC, Cond, Clk, reset, $time);
 end
 
 /////// END INITIALS
@@ -357,7 +389,7 @@ endmodule
 module alu_32 (output reg [31:0] Out, output reg Carry,Zero,Neg,Vflow, input [31:0] A,B, input [4:0] Sel,input Cin);
 
 always @(*) begin
-$display("__ALU: A:%b, B:%b, Sel:%b, aluOut:%b, t:%0d", A, B, Sel, Out, $time);
+// $display("__ALU: A:%b, B:%b, Sel:%b, aluOut:%b, t:%0d", A, B, Sel, Out, $time);
     // Out = 32'b0;
     // Carry = 1'b0;
     // Zero = 1'b0;
@@ -556,3 +588,84 @@ always @(posedge Clk) begin
 end
 endmodule
 ///////////////// END REGISTERS
+
+///////////////// BEGIN RAM
+module ram512x8(output reg [31:0] DataOut, output reg MOC, input Enable, input ReadWrite, input [31:0] Address, input [31:0] DataIn, input [1:0] OpCode);
+
+  reg [7:0] Mem[0:511]; //512 localizaciones de 8 bits
+  always @ (Enable, ReadWrite) begin
+    MOC <= 0; //MOC <= 0;
+    $display("__RAM: entered the always, MOC:%b", MOC);
+    if (Enable) begin
+        case (OpCode) 
+            2'b00: begin //opcode for byte operations 
+                if(ReadWrite) begin //read
+                    DataOut[7:0] = Mem[Address];
+                    DataOut[31:8] = 24'h000000;
+                    MOC <= 1; 
+                    $display("__RAM: read a byte, DataOut:%b", DataOut);
+                end else begin  //write
+                    Mem[Address] <= DataIn[7:0];
+                    MOC <= 1;
+                    $display("__RAM: wrote a byte Adr:%b, Mem[Adr]:%b", Address, Mem[Address]);
+                end
+            end
+            2'b01: begin //opcode for halfword operations
+                if(ReadWrite) begin //read
+                    DataOut[31:16] <= 16'h0000;
+                    DataOut[15:8] <= Mem[Address];
+                    DataOut[7:0] <= Mem[Address + 1];
+                    MOC <= 1;
+                end else begin  //write
+                    Mem[Address] <= DataIn[15:8];
+                    Mem[Address+1] <= DataIn[7:0];
+                    MOC <= 1;
+                end
+            end
+            2'b10: begin //opcode for word operations
+                if(ReadWrite) begin //read
+                    DataOut[31:24] <= Mem[Address];
+                    DataOut[23:16] <= Mem[Address+1];
+                    DataOut[15:8] <= Mem[Address+2];
+                    DataOut[7:0] <= Mem[Address+3];
+                    MOC <= 1;
+                end
+                else begin //write
+                    Mem[Address] <= DataIn[31:24];
+                    Mem[Address+1] <= DataIn[23:16];
+                    Mem[Address+2] <= DataIn[15:8];
+                    Mem[Address+3] <= DataIn[7:0];
+                    MOC <= 1;
+                end
+            end
+            default: begin //default to doubleword if its none of the others
+                if(ReadWrite) begin //read
+                    DataOut[31:24] <= Mem[Address];
+                    DataOut[23:16] <= Mem[Address+1];
+                    DataOut[15:8] <= Mem[Address+2];
+                    DataOut[7:0] <= Mem[Address+3];
+                    #2
+                    DataOut[31:24] <= Mem[Address+4];
+                    DataOut[23:16] <= Mem[Address+5];
+                    DataOut[15:8] <= Mem[Address+6];
+                    DataOut[7:0] <= Mem[Address+7];
+                    MOC <= 1;
+                end
+                else begin //write 
+                    Mem[Address] <= DataIn[31:24];
+                    Mem[Address+1] <= DataIn[23:16];
+                    Mem[Address+2] <= DataIn[15:8];
+                    Mem[Address+3] <= DataIn[7:0];
+                    #2
+                    Mem[Address+4] <= DataIn[31:24];
+                    Mem[Address+5] <= DataIn[23:16];
+                    Mem[Address+6] <= DataIn[15:8];
+                    Mem[Address+7] <= DataIn[7:0];
+                    MOC <= 1;
+                end
+            end
+        endcase 
+    end
+end
+endmodule
+////////////// END RAM
