@@ -51,6 +51,7 @@ Multiplexer4x2_4 MuxC(C,IRBus[19:16],IRBus[15:12],number15,noValue_4, MC);
 Multiplexer2x1_5 MuxD(OP,{1'b0, IRBus[24:21]}, OP4OP0, MD);
 
 MAR Mar(Address, aluOut, MARld, Clk);
+InstructionRegister IR(IRBus, DataOut, IRld, Clk);
 /////// END
 
 /////// BEGIN INITIALS
@@ -238,11 +239,6 @@ module Adder(output reg [6:0] out, input [6:0] in);
 always @(in)
     out <= in + 1'b1;
 // $display("__Adder input: %d, Adder output: %d", in, out); ---
-endmodule
-
-module InstructionRegister(output reg [31:0] Q, input [31:0] D, input LE, Clk);
-always @(posedge Clk)
-    if(LE) Q <= D;
 endmodule
 
 module Encoder(output reg [6:0] Out, input [31:0] Instruction);
@@ -586,6 +582,11 @@ always @(posedge Clk) begin
     end
     $display("__MAR: marOut:%b", Q);
 end
+endmodule
+
+module InstructionRegister(output reg [31:0] Q, input [31:0] D, input LE, Clk);
+always @(posedge Clk)
+    if(LE) Q <= D;
 endmodule
 ///////////////// END REGISTERS
 
