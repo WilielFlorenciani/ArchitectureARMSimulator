@@ -39,12 +39,13 @@ reg [1:0] OpCode;
 
 ControlUnit CU(FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MA, MB, MC, MD, ME, OP4OP0, current_state, IRBus, Cond, MOC, reset, Clk);
 RegisterFile RF(PA, PB, aluOut, A, IRBus[3:0], C, Clk, RFld);
-alu_32 ALU(aluOut, ALU_flags[3], ALU_flags[2], ALU_flags[1], ALU_flags[0], PA, PB, OP[4:0], Cin);
+alu_32 ALU(aluOut, ALU_flags[3], ALU_flags[2], ALU_flags[1], ALU_flags[0], PA, AluB, OP[4:0], Cin);
 
 Multiplexer4x2_4 MuxA(A,IRBus[19:16],IRBus[15:12],number15,noValue_4, MA);
 Multiplexer4x2_32 MuxB(AluB, PB, noValue_32, noValue_32, noValue_32, MB );
-Multiplexer4x2_4 MuxC(C,IRBus[15:12],number15,IRBus[19:16],noValue_4, MC); //check this, any states that used IR19-16 now have to point to 10 instead of 00
-Multiplexer2x1_5 MuxD(OP,1'b0 + IRBus[24:21], OP4OP0, MD);
+// Multiplexer4x2_4 MuxC(C,IRBus[15:12],number15,IRBus[19:16],noValue_4, MC); //check this, any states that used IR19-16 now have to point to 10 instead of 00
+Multiplexer4x2_4 MuxC(C,IRBus[19:16],IRBus[15:12],number15,noValue_4, MC);
+Multiplexer2x1_5 MuxD(OP,{1'b0, IRBus[24:21]}, OP4OP0, MD);
 
 MAR Mar(Address, aluOut, MARld, Clk);
 /////// END
@@ -73,7 +74,7 @@ initial begin
 // #50 //delay to wait for precharge things
 $display("\n~~~~~~~~Initiating MicroSan simulation~~~~~~~~\n");
 // $monitor("%h    %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b",IR,aluOut,OP,current_state,FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MD, ME, MA, MB, MC,Clk,reset, $time); 
-    $monitor("IR:%x, Dout:%x, alO:%b, State:%d, RFld:%b, MA:%b, MB:%b, MC:%b, OP:%b, IRld:%b, MARld:%b, R_W:%b, MOV:%b, MOC:%b, Cond:%b, Clk:%b, reset:%b, t:%0d", IRBus, DataOut, aluOut, current_state, RFld, MA, MB, MC, OP4OP0, IRld, MARld, R_W, MOV, MOC, Cond, Clk, reset, $time);
+    $monitor("IR:%x, Dout:%x, alO:%b, State:%d, RFld:%b, MA:%b, MB:%b, MC:%b, MD:%b, OP:%b, IRld:%b, MARld:%b, R_W:%b, MOV:%b, MOC:%b, Cond:%b, Clk:%b, reset:%b, t:%0d", IRBus, DataOut, aluOut, current_state, RFld, MA, MB, MC, MD, OP4OP0, IRld, MARld, R_W, MOV, MOC, Cond, Clk, reset, $time);
 end
 
 /////// END INITIALS
@@ -262,9 +263,11 @@ endmodule
 module Microstore (output reg [32:0] out, output reg [6:0] current_state, input reset, input [6:0] next_state);
     //n2n1n0 inv s1s0 moore cr(6)
         parameter[0:33 * 65 - 1] CR_states = {
-        33'b011000010000000110110011010000000, //0
+        // 33'b011000010000000110110011010000000, //0 --> nestor state 
+        33'b011000010000000111010011010000000, //0 --> our state 
         33'b011000000100010000010100000000000, //1
-        33'b011000010001110000110100010000000, //2
+        // 33'b011000010001110000110100010000000, //2 --> nestor state
+        33'b011000010001110001010100010000000, //2 --> our state 
         33'b101100001001100000000000000000011, //3
         33'b100001000000000000000000000000001, //4
         33'b010000010000000010000000000000001, //5
@@ -353,13 +356,13 @@ endmodule
 ///////////////// BEGIN ALU
 module alu_32 (output reg [31:0] Out, output reg Carry,Zero,Neg,Vflow, input [31:0] A,B, input [4:0] Sel,input Cin);
 
-always @(*)
-    begin
-    Out = 32'b0;
-    Carry = 1'b0;
-    Zero = 1'b0;
-    Neg = 1'b0;
-    Vflow = 1'b0;
+always @(*) begin
+$display("__ALU: A:%b, B:%b, Sel:%b, aluOut:%b, t:%0d", A, B, Sel, Out, $time);
+    // Out = 32'b0;
+    // Carry = 1'b0;
+    // Zero = 1'b0;
+    // Neg = 1'b0;
+    // Vflow = 1'b0;
     
     case(Sel)
     //Arithmetic Operations
@@ -404,7 +407,7 @@ wire [15:0] BDselect;
 
 wire [31:0] I0, I1, I2, I3, I4, I5, I6, I7, I8, I9, I10, I11, I12, I13, I14, I15;
 
-always@(I15) begin
+always@(I15, rfLd) begin
     $display("__R15: %b, Clock:%b, t:%0d", I15, clk, $time);
 end
 
@@ -492,7 +495,7 @@ endmodule
 
 
 module register32bit(output reg [31:0] Q, input [31:0] D, input clk, ld);
-initial Q <= 32'd0;
+// initial Q <= 32'd0;
   always @ (posedge clk)
   if(ld) Q <= D;
 endmodule
