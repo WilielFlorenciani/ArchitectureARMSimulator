@@ -221,9 +221,9 @@ module ram512x8(output reg [31:0] DataOut, output reg MOC, input Enable, input R
             end
             2'b01: begin //opcode for halfword operations
                 if(ReadWrite) begin //read
-                    DataOut[31:16] <= Mem[Address];
-                    DataOut[15:8] <= Mem[Address + 1];
-                    DataOut[7:0] <= 16'h0000; 
+                    DataOut[31:16] <= 16'h0000;
+                    DataOut[15:8] <= Mem[Address];
+                    DataOut[7:0] <= Mem[Address + 1]; 
                     MOC <= 1;
                 end else begin  //write
                     Mem[Address] <= DataIn[15:8];
