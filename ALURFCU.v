@@ -33,8 +33,12 @@ reg Cin; //wire Cin; --> for when we figure out Cin
 wire [31:0] Address;
 //wire [31:0] MDRout;
 wire [31:0] DataOut;
-wire [31:0] DataIn;
+// wire [31:0] DataIn; --> got replaced with mdrOut
 reg [1:0] OpCode;
+
+//MDR and MuxE
+wire [31:0] mdrOut;
+wire [31:0] muxEOut;
 
 integer fi, code, i; reg [7:0] data; reg [31:0] Adr; //variables to handle file info
 
@@ -42,15 +46,17 @@ integer fi, code, i; reg [7:0] data; reg [31:0] Adr; //variables to handle file 
 ControlUnit CU(FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MA, MB, MC, MD, ME, OP4OP0, current_state, IRBus, Cond, MOC, reset, Clk);
 RegisterFile RF(PA, PB, aluOut, A, IRBus[3:0], C, Clk, RFld);
 alu_32 ALU(aluOut, ALU_flags[3], ALU_flags[2], ALU_flags[1], ALU_flags[0], PA, AluB, OP[4:0], Cin);
-ram512x8 RAM(DataOut, MOC, MOV, R_W, Address, DataIn, OpCode);
+ram512x8 RAM(DataOut, MOC, MOV, R_W, Address, mdrOut, OpCode);
 
 Multiplexer4x2_4 MuxA(A,IRBus[19:16],IRBus[15:12],number15,noValue_4, MA);
 Multiplexer4x2_32 MuxB(AluB, PB, noValue_32, noValue_32, noValue_32, MB );
 // Multiplexer4x2_4 MuxC(C,IRBus[15:12],number15,IRBus[19:16],noValue_4, MC); //check this, any states that used IR19-16 now have to point to 10 instead of 00
 Multiplexer4x2_4 MuxC(C,IRBus[19:16],IRBus[15:12],number15,noValue_4, MC);
 Multiplexer2x1_5 MuxD(OP,{1'b0, IRBus[24:21]}, OP4OP0, MD);
+Multiplexer2x1_32 MuxE(muxEOut, DataOut, aluOut, ME);
 
 MAR Mar(Address, aluOut, MARld, Clk);
+MDR Mdr(mdrOut, muxEOut, MDRld, Clk);
 InstructionRegister IR(IRBus, DataOut, IRld, Clk);
 /////// END
 
@@ -99,7 +105,7 @@ end
 
 initial begin //for signal simulations
 Cin <= 0;
-Cond <= 0; //making it 0 so that it loops back to 1
+Cond <= 1; //making it 0 so that it loops back to 1
 // MOC <= 1; 
 end
 
@@ -572,6 +578,18 @@ module Multiplexer2x1_5(output reg [4:0] Q, input [4:0] I0, I1, input S);
         end
     
 endmodule
+
+module Multiplexer2x1_32(output reg [31:0] Q, input [31:0] I0, I1, input S);
+    
+    always @ (*)
+    begin
+        case(S)
+            1'b0: Q <= I0;
+            1'b1: Q <= I1;
+        endcase
+        end
+    
+endmodule
 ///////////////// END MUXES
 
 ///////////////// BEGIN REGISTERS
@@ -581,6 +599,15 @@ always @(posedge Clk) begin
         Q <= D;
     end
     $display("__MAR: marOut:%b", Q);
+end
+endmodule
+
+module MDR(output reg [31:0] Q, input [31:0] D, input LE, Clk);
+always @(posedge Clk) begin
+    if(LE) begin 
+        Q <= D;
+    end
+    $display("__MDR: mdrOut:%b", Q);
 end
 endmodule
 
