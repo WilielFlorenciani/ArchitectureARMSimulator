@@ -13,8 +13,8 @@ wire [1:0] MA, MB, MC;
 wire [4:0] OP4OP0;
 wire [6:0] current_state;
 wire [31:0] IRBus;
-wire MOC;
-reg Cond; //registers to simulate the signals
+wire MOC, Cond;
+// reg Cond, MOC; //registers to simulate the signals
 
 //wires de Register File y ALU
 wire [3:0] ALU_flags; // 3-Carry, 2-Zero, 1-Negative, 0-Vflow
@@ -47,16 +47,18 @@ ControlUnit CU(FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MA, MB, MC, MD, ME, OP4
 RegisterFile RF(PA, PB, aluOut, A, IRBus[3:0], C, Clk, RFld);
 alu_32 ALU(aluOut, ALU_flags[3], ALU_flags[2], ALU_flags[1], ALU_flags[0], PA, AluB, OP[4:0], Cin);
 ram512x8 RAM(DataOut, MOC, MOV, R_W, Address, mdrOut, OpCode);
+// ConditionTester condition_tester(Cond, FROut[3], FROut[2], FROut[1], FROut[0], IRBus[31:28]); //use this one cuando vayas a usar FR
+ConditionTester condition_tester(Cond, ALU_flags[3], ALU_flags[2], ALU_flags[1], ALU_flags[0], IRBus[31:28]); 
 
 Multiplexer4x2_4 MuxA(A,IRBus[19:16],IRBus[15:12],number15,noValue_4, MA);
 Multiplexer4x2_32 MuxB(AluB, PB, noValue_32, noValue_32, noValue_32, MB );
-// Multiplexer4x2_4 MuxC(C,IRBus[15:12],number15,IRBus[19:16],noValue_4, MC); //check this, any states that used IR19-16 now have to point to 10 instead of 00
 Multiplexer4x2_4 MuxC(C,IRBus[19:16],IRBus[15:12],number15,noValue_4, MC);
 Multiplexer2x1_5 MuxD(OP,{1'b0, IRBus[24:21]}, OP4OP0, MD);
 Multiplexer2x1_32 MuxE(muxEOut, DataOut, aluOut, ME);
 
 MAR Mar(Address, aluOut, MARld, Clk);
 MDR Mdr(mdrOut, muxEOut, MDRld, Clk);
+// FlagRegister FR(FROut, ALU_flags, FRld, Clk); //para usar el FR hay que hacer FRld = 1 en las senales de moore cuando haga falta
 InstructionRegister IR(IRBus, DataOut, IRld, Clk);
 /////// END
 
@@ -94,7 +96,7 @@ end
 initial begin
 #50 //so that clock starts when precharge tasks are done 
   Clk <= 1'b0;
-  repeat(20) #5 Clk = ~Clk;
+  repeat(30) #5 Clk = ~Clk;
 end
 
 initial begin
@@ -105,15 +107,15 @@ end
 
 initial begin //for signal simulations
 Cin <= 0;
-Cond <= 1; //making it 0 so that it loops back to 1
+// Cond <= 1; //making it 0 so that it loops back to 1
 // MOC <= 1; 
 end
 
-initial begin
+initial begin //BEGIN PRINT
 #50 //delay to wait for precharge things
 $display("\n~~~~~~~~Initiating ALURFCU simulation~~~~~~~~\n");
 // $monitor("%h    %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b",IR,aluOut,OP,current_state,FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MD, ME, MA, MB, MC,Clk,reset, $time); 
-    $monitor("IR:%x, Dout:%x, State:%d, RFld:%b, MA:%b, MB:%b, MC:%b, MD:%b, OP:%b, IRld:%b, MARld:%b, R_W:%b, MOV:%b, MOC:%b, Cond:%b, Clk:%b, reset:%b, t:%0d", IRBus, DataOut, current_state, RFld, MA, MB, MC, MD, OP4OP0, IRld, MARld, R_W, MOV, MOC, Cond, Clk, reset, $time);
+    $monitor("IR:%x, Dout:%x, AluF:%b, State:%d, RFld:%b, MA:%b, MB:%b, MC:%b, MD:%b, OP:%b, IRld:%b, MARld:%b, R_W:%b, MOV:%b, MOC:%b, Cond:%b, Clk:%b, reset:%b, t:%0d", IRBus, DataOut, ALU_flags, current_state, RFld, MA, MB, MC, MD, OP4OP0, IRld, MARld, R_W, MOV, MOC, Cond, Clk, reset, $time);
 end
 
 /////// END INITIALS
@@ -598,7 +600,7 @@ always @(posedge Clk) begin
     if(LE) begin 
         Q <= D;
     end
-    $display("__MAR: marOut:%b", Q);
+    $display("__MAR: marOut:%b, t:%0d", Q, $time);
 end
 endmodule
 
@@ -607,7 +609,16 @@ always @(posedge Clk) begin
     if(LE) begin 
         Q <= D;
     end
-    $display("__MDR: mdrOut:%b", Q);
+    $display("__MDR: mdrOut:%b, t:%0d", Q, $time);
+end
+endmodule
+
+module FlagRegister(output reg [3:0] Q, input [3:0] D, input LE, Clk);
+always @(posedge Clk) begin
+    if(LE) begin 
+        Q <= D;
+    end
+    $display("__FR: mdrOut:%b, t:%0d", Q, $time);
 end
 endmodule
 
@@ -697,3 +708,60 @@ module ram512x8(output reg [31:0] DataOut, output reg MOC, input Enable, input R
 end
 endmodule
 ////////////// END RAM
+
+////////////// BEGIN CONDITION TESTER
+module ConditionTester (output reg Cond, input C, Z, N, V, input [3:0] CC);
+always @ (*) begin
+case(CC)
+    4'h0: begin
+        Cond <= Z; //EQ Equal
+    end
+    4'h1: begin
+        Cond <= ~Z; //NE Not equal
+    end
+    4'h2: begin
+        Cond <= C; //CS/HS Unsigned higher or same
+    end
+    4'h3: begin
+        Cond <= ~C; //CC/LO Unsigned lower
+    end
+    4'h4: begin
+        Cond <= N; //MI Mius
+    end
+    4'h5: begin
+        Cond <= ~N; //PL Positive or Zero
+    end
+    4'h6: begin
+        Cond <= V; //VS Overflow
+    end
+    4'h7: begin
+        Cond <= ~V; //VC No overflow
+    end
+    4'h8: begin
+        Cond <= C & ~Z; //HI Unsigned higher //test this, might be &&?
+    end
+    4'h9: begin
+        Cond <= ~C | Z; //LS Unsigned lower or same
+    end
+    4'hA: begin
+        Cond <= ~(N ^ V); //GE Greater or equal
+    end
+    4'hB: begin
+        Cond <= N ^ V; //LT Less than
+    end
+    4'hC: begin
+        Cond <= ~Z & (~(N ^ V)); //GT Greater than
+    end
+    4'hD: begin
+        Cond <= Z | (~(N ^ ~V)); //LE Less than or eual
+    end
+    4'hE: begin
+        Cond <= 1'b1; //AL Always
+    end
+endcase
+
+$display("__CT: Cond:%b, Z:%b, C:%b, N:%b, V:%b, CC:%b", Cond, Z, C, N, V, CC);
+
+end
+endmodule
+////////////// END CONDITION TESTER
