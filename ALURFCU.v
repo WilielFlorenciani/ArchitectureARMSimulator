@@ -8,13 +8,14 @@ parameter noValue_1 = 1'b0;
 parameter noValue_32 = 32'b0;
 
 //wires de Control Unit
-wire FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MD, ME;
-wire [1:0] MA, MB, MC;
+wire MF, FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MD, ME;
+wire [1:0] MA, MB, MC, sizeOP;
 wire [4:0] OP4OP0;
-wire [6:0] current_state;
+wire [9:0] current_state;
 wire [31:0] IRBus;
 wire MOC, Cond;
 // reg Cond, MOC; //registers to simulate the signals
+// reg [1:0] OpCode;
 
 //wires de Register File y ALU
 wire [3:0] ALU_flags; // 3-Carry, 2-Zero, 1-Negative, 0-Vflow
@@ -31,22 +32,22 @@ reg Cin; //wire Cin; --> for when we figure out Cin
 
 //wires del RAM 
 wire [31:0] Address;
-//wire [31:0] MDRout;
 wire [31:0] DataOut;
 // wire [31:0] DataIn; --> got replaced with mdrOut
-reg [1:0] OpCode;
 
-//MDR and MuxE
+
+//MDR, MuxE, MuxF
 wire [31:0] mdrOut;
 wire [31:0] muxEOut;
+wire [3:0] muxFOut;
 
 integer fi, code, i; reg [7:0] data; reg [31:0] Adr; //variables to handle file info
 
 
-ControlUnit CU(FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MA, MB, MC, MD, ME, OP4OP0, current_state, IRBus, Cond, MOC, reset, Clk);
-RegisterFile RF(PA, PB, aluOut, A, IRBus[3:0], C, Clk, RFld);
+ControlUnit CU(MF, FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MA, MB, MC, sizeOP, MD, ME, OP4OP0, current_state, IRBus, Cond, MOC, reset, Clk);
+RegisterFile RF(PA, PB, aluOut, A, muxFOut, C, Clk, RFld);
 alu_32 ALU(aluOut, ALU_flags[3], ALU_flags[2], ALU_flags[1], ALU_flags[0], PA, AluB, OP[4:0], Cin);
-ram512x8 RAM(DataOut, MOC, MOV, R_W, Address, mdrOut, OpCode);
+ram512x8 RAM(DataOut, MOC, MOV, R_W, Address, mdrOut, sizeOP);
 // ConditionTester condition_tester(Cond, FROut[3], FROut[2], FROut[1], FROut[0], IRBus[31:28]); //use this one cuando vayas a usar FR
 ConditionTester condition_tester(Cond, ALU_flags[3], ALU_flags[2], ALU_flags[1], ALU_flags[0], IRBus[31:28]); 
 
@@ -55,6 +56,7 @@ Multiplexer4x2_32 MuxB(AluB, PB, noValue_32, noValue_32, noValue_32, MB );
 Multiplexer4x2_4 MuxC(C,IRBus[19:16],IRBus[15:12],number15,noValue_4, MC);
 Multiplexer2x1_5 MuxD(OP,{1'b0, IRBus[24:21]}, OP4OP0, MD);
 Multiplexer2x1_32 MuxE(muxEOut, DataOut, aluOut, ME);
+Multiplexer2x1_4 MuxF(muxFOut,IRBus[3:0],IRBus[19:16], MF);
 
 MAR Mar(Address, aluOut, MARld, Clk);
 MDR Mdr(mdrOut, muxEOut, MDRld, Clk);
@@ -69,7 +71,7 @@ initial begin //initial to precharge memory with the file
     fi = $fopen("PF1_Vega_Rodriguez_Jorge_ramdata.txt","r");
     // Adr = 9'b000000000;
     Adr = 0;
-    OpCode = 2'b10;
+    // OpCode = 2'b10;
     while (!$feof(fi)) begin
         code = $fscanf(fi, "%x", data);
         RAM.Mem[Adr] = data;
@@ -122,48 +124,50 @@ end
 endmodule
 
 /////////////// BEGIN CONTROL UNIT
-module ControlUnit(output reg FRld, RFld, IRld, MARld, MDRld, R_W , MOV, output reg [1:0] MA, MB, MC, output reg MD, ME, output reg [4:0] OP4OP0, output reg [6:0] current_state, input [31:0] IR, input Cond, MOC, reset, clk);
+module ControlUnit(output reg MF, FRld, RFld, IRld, MARld, MDRld, R_W , MOV, output reg [1:0] MA, MB, MC, sizeOP, output reg MD, ME, output reg [4:0] OP4OP0, output reg [9:0] current_state, input [31:0] IR, input Cond, MOC, reset, clk);
 
-wire [6:0] mux7Out;
+wire [9:0] mux7Out;
 wire mux1Out;
-wire [6:0] AdderOut;
-wire [6:0] EncoderOut;
-wire [32:0] CRin;
-wire [32:0] CRout;
+wire [9:0] AdderOut;
+wire [9:0] EncoderOut;
+wire [38:0] CRin;
+wire [38:0] CRout;
 wire invOut;
-wire [6:0] incrementedState;
+wire [9:0] incrementedState;
 wire [1:0] M;
 wire noValue = 0;
-wire [6:0] val1 = 1;
-wire [6:0] new_state, curr_state;
+wire [9:0] val1 = 1;
+wire [9:0] new_state, curr_state;
 
 always @ (*) begin
-    // Cin <= CR[34];
-    FRld <= CRout[26];
-    RFld <= CRout[25];
-    IRld <= CRout[24];
-    MARld <= CRout[23];
-    MDRld <= CRout[22];
-    R_W <= CRout[21];
-    MOV <= CRout[20];
-    MA <= CRout[19:18];
-    MB <= CRout[17:16];
-    MC <= CRout[15:14];
-    MD <= CRout[13];
-    ME <= CRout[12];
-    OP4OP0 <= CRout[11:7];
+    // Cin <= CRout[?];
+    MF <= CRout[38];
+    FRld <= CRout[37];
+    RFld <= CRout[36];
+    IRld <= CRout[35];
+    MARld <= CRout[34];
+    MDRld <= CRout[33];
+    R_W <= CRout[32];
+    MOV <= CRout[31];
+    MA <= CRout[30:29];
+    MB <= CRout[28:27];
+    MC <= CRout[26:25];
+    MD <= CRout[24];
+    ME <= CRout[23];
+    OP4OP0 <= CRout[22:18];
+    sizeOP <= CRout[17:16];
     current_state <= curr_state;
 end
-
-
-Multiplexer7_4x2 mux7_4x2 (mux7Out, EncoderOut, val1, CRout[6:0], incrementedState, M, reset); //CRout?
+// moore        size n2n1n0 inv  s1s0   CR
+//             17:16  15:13  12  11:10  9-0
+Multiplexer7_4x2 mux7_4x2 (mux7Out, EncoderOut, val1, CRout[9:0], incrementedState, M, reset); 
 Adder adder (AdderOut, mux7Out);
 Microstore microstore (CRin, new_state, reset, mux7Out);
-ControlRegister control_register (CRout, curr_state, clk, CRin, new_state);//CRout?
-NextStateAddressSelector nsas (M, invOut, CRout[32:30]);//CRout??
-Inverter inv (invOut, mux1Out, CRout[29]);
+ControlRegister control_register (CRout, curr_state, clk, CRin, new_state);
+NextStateAddressSelector nsas (M, invOut, CRout[15:13]);
+Inverter inv (invOut, mux1Out, CRout[12]);
 IncrementerRegister incr_reg (incrementedState, AdderOut, clk);
-Multiplexer1_4x2 mux1_4x2 (mux1Out, MOC, Cond, noValue, noValue, CRout[28:27]); //aqui MOC tiene que ir en 0 y Cond en 1//CRout?
+Multiplexer1_4x2 mux1_4x2 (mux1Out, MOC, Cond, noValue, noValue, CRout[11:10]); //aqui MOC tiene que ir en 0 y Cond en 1//CRout?
 Encoder encoder (EncoderOut, IR);
 
 endmodule
@@ -176,7 +180,7 @@ module Inverter(output reg out, input in, inv);
 endmodule
 
 // multiplexer4x2
-module Multiplexer7_4x2(output reg [6:0] out, input [6:0] I0, I1, I2, I3, input [1:0] S, input reset);
+module Multiplexer7_4x2(output reg [9:0] out, input [9:0] I0, I1, I2, I3, input [1:0] S, input reset);
 
     always @ (*) begin
         if(reset) 
@@ -238,18 +242,18 @@ module NextStateAddressSelector(output reg [1:0] M, input Sts, input [2:0] N);
         end
 endmodule
 
-module IncrementerRegister(output reg [6:0] Q, input [6:0] D, input  Clk);
+module IncrementerRegister(output reg [9:0] Q, input [9:0] D, input  Clk);
 always @(posedge Clk)
     Q <= D;
 endmodule
 
-module Adder(output reg [6:0] out, input [6:0] in);
+module Adder(output reg [9:0] out, input [9:0] in);
 always @(in)
     out <= in + 1'b1;
 // $display("__Adder input: %d, Adder output: %d", in, out); ---
 endmodule
 
-module Encoder(output reg [6:0] Out, input [31:0] Instruction);
+module Encoder(output reg [9:0] Out, input [31:0] Instruction);
 always @(Instruction) begin
 case(Instruction[27:25])
     3'b001: begin
@@ -296,14 +300,12 @@ endcase
 end
 endmodule
 
-module Microstore (output reg [32:0] out, output reg [6:0] current_state, input reset, input [6:0] next_state);
+module Microstore (output reg [38:0] out, output reg [9:0] current_state, input reset, input [9:0] next_state);
     //n2n1n0 inv s1s0 moore cr(6)
-        parameter[0:33 * 65 - 1] CR_states = {
-        // 33'b011000010000000110110011010000000, //0 --> nestor state 
-        33'b011000010000000111010011010000000, //0 --> our state 
+        parameter[0:39 * 65 - 1] CR_states = { //cambiar aqui 65 por el numero de estados que hay 
+        33'b011000010000000111010011010000000, //0 
         33'b011000000100010000010100000000000, //1
-        // 33'b011000010001110000110100010000000, //2 --> nestor state
-        33'b011000010001110001010100010000000, //2 --> our state 
+        33'b011000010001110001010100010000000, //2
         33'b101100001001100000000000000000011, //3
         33'b100001000000000000000000000000001, //4
         33'b010000010000000010000000000000001, //5
@@ -371,17 +373,17 @@ module Microstore (output reg [32:0] out, output reg [6:0] current_state, input 
 always @(next_state, reset)
 begin
     if (reset) begin
-        out           <= CR_states[0+:33];
+        out           <= CR_states[0+:39];
         current_state <= 10'd0;
     end
     else begin
-        out           <= CR_states[33*next_state+:33];
+        out           <= CR_states[39*next_state+:39];
         current_state <= next_state;
     end
 end
 endmodule
 
-module ControlRegister(output reg [32:0] Qs, output reg [6:0] current_state, input Clk, input [32:0] Ds, input [6:0] next_state); //32b bus, 20 moore lines, 6 CR and 6 NSAS
+module ControlRegister(output reg [38:0] Qs, output reg [9:0] current_state, input Clk, input [38:0] Ds, input [9:0] next_state); 
   always @ (posedge Clk) begin
    Qs <= Ds;
    current_state <= next_state; 
@@ -570,6 +572,19 @@ endmodule
 
 //this one's used for MuxD
 module Multiplexer2x1_5(output reg [4:0] Q, input [4:0] I0, I1, input S);
+    
+    always @ (*)
+    begin
+        case(S)
+            1'b0: Q <= I0;
+            1'b1: Q <= I1;
+        endcase
+        end
+    
+endmodule
+
+//this one is for MuxF
+module Multiplexer2x1_4(output reg [3:0] Q, input [3:0] I0, I1, input S);
     
     always @ (*)
     begin
