@@ -13,8 +13,8 @@ wire [1:0] MA, MB, MC;
 wire [4:0] OP4OP0;
 wire [6:0] current_state;
 wire [31:0] IRBus;
-// wire Cond, MOC;
-reg Cond, MOC; //registers to simulate the signals
+wire MOC, Cond;
+// reg Cond, MOC; //registers to simulate the signals
 
 //wires de Register File y ALU
 wire [3:0] ALU_flags; // 3-Carry, 2-Zero, 1-Negative, 0-Vflow
@@ -33,48 +33,89 @@ reg Cin; //wire Cin; --> for when we figure out Cin
 wire [31:0] Address;
 //wire [31:0] MDRout;
 wire [31:0] DataOut;
-wire [31:0] DataIn;
+// wire [31:0] DataIn; --> got replaced with mdrOut
 reg [1:0] OpCode;
+
+//MDR and MuxE
+wire [31:0] mdrOut;
+wire [31:0] muxEOut;
+
+integer fi, code, i; reg [7:0] data; reg [31:0] Adr; //variables to handle file info
 
 
 ControlUnit CU(FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MA, MB, MC, MD, ME, OP4OP0, current_state, IRBus, Cond, MOC, reset, Clk);
 RegisterFile RF(PA, PB, aluOut, A, IRBus[3:0], C, Clk, RFld);
 alu_32 ALU(aluOut, ALU_flags[3], ALU_flags[2], ALU_flags[1], ALU_flags[0], PA, AluB, OP[4:0], Cin);
+ram512x8 RAM(DataOut, MOC, MOV, R_W, Address, mdrOut, OpCode);
+// ConditionTester condition_tester(Cond, FROut[3], FROut[2], FROut[1], FROut[0], IRBus[31:28]); //use this one cuando vayas a usar FR
+ConditionTester condition_tester(Cond, ALU_flags[3], ALU_flags[2], ALU_flags[1], ALU_flags[0], IRBus[31:28]); 
 
 Multiplexer4x2_4 MuxA(A,IRBus[19:16],IRBus[15:12],number15,noValue_4, MA);
 Multiplexer4x2_32 MuxB(AluB, PB, noValue_32, noValue_32, noValue_32, MB );
-// Multiplexer4x2_4 MuxC(C,IRBus[15:12],number15,IRBus[19:16],noValue_4, MC); //check this, any states that used IR19-16 now have to point to 10 instead of 00
 Multiplexer4x2_4 MuxC(C,IRBus[19:16],IRBus[15:12],number15,noValue_4, MC);
 Multiplexer2x1_5 MuxD(OP,{1'b0, IRBus[24:21]}, OP4OP0, MD);
+Multiplexer2x1_32 MuxE(muxEOut, DataOut, aluOut, ME);
 
 MAR Mar(Address, aluOut, MARld, Clk);
+MDR Mdr(mdrOut, muxEOut, MDRld, Clk);
+// FlagRegister FR(FROut, ALU_flags, FRld, Clk); //para usar el FR hay que hacer FRld = 1 en las senales de moore cuando haga falta
+InstructionRegister IR(IRBus, DataOut, IRld, Clk);
 /////// END
 
 /////// BEGIN INITIALS
 
+initial begin //initial to precharge memory with the file
+    $display("----- Initiating Precharge -----");
+    fi = $fopen("PF1_Vega_Rodriguez_Jorge_ramdata.txt","r");
+    // Adr = 9'b000000000;
+    Adr = 0;
+    OpCode = 2'b10;
+    while (!$feof(fi)) begin
+        code = $fscanf(fi, "%x", data);
+        RAM.Mem[Adr] = data;
+        Adr = Adr + 1;
+    end
+    $fclose(fi);
+    $display("----- Finished Precharge ----- time:%0d", $time);
+end
+
+initial begin //initial to read content of memory after precharging
+#1
+    $display("----- Memory contents after precharging ----- time:%0d", $time);                       
+    Adr = 7'b0000000;
+    repeat (16) begin
+        #1;
+        $display("__RAM_Precharge: data in address %d = %x, time: %0d", Adr, RAM.Mem[Adr], $time);
+        #1;
+        Adr = Adr + 1;
+        #1;
+    end                                     
+    $display("----- END PRECHARGE INFO ----- time:%0d", $time);                                               
+end 
+
 initial begin
-// #50 //so that clock starts when precharge tasks are done 
+#50 //so that clock starts when precharge tasks are done 
   Clk <= 1'b0;
-  repeat(20) #5 Clk = ~Clk;
+  repeat(30) #5 Clk = ~Clk;
 end
 
 initial begin
-// #50 //so that reset starts when precharge tasks are done 
+#50 //so that reset starts when precharge tasks are done 
   reset = 1'b1;
 #5 reset = ~reset;
 end
 
 initial begin //for signal simulations
 Cin <= 0;
-Cond <= 0; //making it 0 so that it loops back to 1
-MOC <= 1; 
+// Cond <= 1; //making it 0 so that it loops back to 1
+// MOC <= 1; 
 end
 
-initial begin
-// #50 //delay to wait for precharge things
-$display("\n~~~~~~~~Initiating MicroSan simulation~~~~~~~~\n");
+initial begin //BEGIN PRINT
+#50 //delay to wait for precharge things
+$display("\n~~~~~~~~Initiating ALURFCU simulation~~~~~~~~\n");
 // $monitor("%h    %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b",IR,aluOut,OP,current_state,FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MD, ME, MA, MB, MC,Clk,reset, $time); 
-    $monitor("IR:%x, Dout:%x, alO:%b, State:%d, RFld:%b, MA:%b, MB:%b, MC:%b, MD:%b, OP:%b, IRld:%b, MARld:%b, R_W:%b, MOV:%b, MOC:%b, Cond:%b, Clk:%b, reset:%b, t:%0d", IRBus, DataOut, aluOut, current_state, RFld, MA, MB, MC, MD, OP4OP0, IRld, MARld, R_W, MOV, MOC, Cond, Clk, reset, $time);
+    $monitor("IR:%x, Dout:%x, AluF:%b, State:%d, RFld:%b, MA:%b, MB:%b, MC:%b, MD:%b, OP:%b, IRld:%b, MARld:%b, R_W:%b, MOV:%b, MOC:%b, Cond:%b, Clk:%b, reset:%b, t:%0d", IRBus, DataOut, ALU_flags, current_state, RFld, MA, MB, MC, MD, OP4OP0, IRld, MARld, R_W, MOV, MOC, Cond, Clk, reset, $time);
 end
 
 /////// END INITIALS
@@ -206,11 +247,6 @@ module Adder(output reg [6:0] out, input [6:0] in);
 always @(in)
     out <= in + 1'b1;
 // $display("__Adder input: %d, Adder output: %d", in, out); ---
-endmodule
-
-module InstructionRegister(output reg [31:0] Q, input [31:0] D, input LE, Clk);
-always @(posedge Clk)
-    if(LE) Q <= D;
 endmodule
 
 module Encoder(output reg [6:0] Out, input [31:0] Instruction);
@@ -357,7 +393,7 @@ endmodule
 module alu_32 (output reg [31:0] Out, output reg Carry,Zero,Neg,Vflow, input [31:0] A,B, input [4:0] Sel,input Cin);
 
 always @(*) begin
-$display("__ALU: A:%b, B:%b, Sel:%b, aluOut:%b, t:%0d", A, B, Sel, Out, $time);
+// $display("__ALU: A:%b, B:%b, Sel:%b, aluOut:%b, t:%0d", A, B, Sel, Out, $time);
     // Out = 32'b0;
     // Carry = 1'b0;
     // Zero = 1'b0;
@@ -544,6 +580,18 @@ module Multiplexer2x1_5(output reg [4:0] Q, input [4:0] I0, I1, input S);
         end
     
 endmodule
+
+module Multiplexer2x1_32(output reg [31:0] Q, input [31:0] I0, I1, input S);
+    
+    always @ (*)
+    begin
+        case(S)
+            1'b0: Q <= I0;
+            1'b1: Q <= I1;
+        endcase
+        end
+    
+endmodule
 ///////////////// END MUXES
 
 ///////////////// BEGIN REGISTERS
@@ -552,7 +600,168 @@ always @(posedge Clk) begin
     if(LE) begin 
         Q <= D;
     end
-    $display("__MAR: marOut:%b", Q);
+    $display("__MAR: marOut:%b, t:%0d", Q, $time);
 end
 endmodule
+
+module MDR(output reg [31:0] Q, input [31:0] D, input LE, Clk);
+always @(posedge Clk) begin
+    if(LE) begin 
+        Q <= D;
+    end
+    $display("__MDR: mdrOut:%b, t:%0d", Q, $time);
+end
+endmodule
+
+module FlagRegister(output reg [3:0] Q, input [3:0] D, input LE, Clk);
+always @(posedge Clk) begin
+    if(LE) begin 
+        Q <= D;
+    end
+    $display("__FR: mdrOut:%b, t:%0d", Q, $time);
+end
+endmodule
+
+module InstructionRegister(output reg [31:0] Q, input [31:0] D, input LE, Clk);
+always @(posedge Clk)
+    if(LE) Q <= D;
+endmodule
 ///////////////// END REGISTERS
+
+///////////////// BEGIN RAM
+module ram512x8(output reg [31:0] DataOut, output reg MOC, input Enable, input ReadWrite, input [31:0] Address, input [31:0] DataIn, input [1:0] OpCode);
+
+  reg [7:0] Mem[0:511]; //512 localizaciones de 8 bits
+  always @ (Enable, ReadWrite) begin
+    MOC <= 0; //MOC <= 0;
+    $display("__RAM: entered the always, MOC:%b", MOC);
+    if (Enable) begin
+        case (OpCode) 
+            2'b00: begin //opcode for byte operations 
+                if(ReadWrite) begin //read
+                    DataOut[7:0] = Mem[Address];
+                    DataOut[31:8] = 24'h000000;
+                    MOC <= 1; 
+                    $display("__RAM: read a byte, DataOut:%b", DataOut);
+                end else begin  //write
+                    Mem[Address] <= DataIn[7:0];
+                    MOC <= 1;
+                    $display("__RAM: wrote a byte Adr:%b, Mem[Adr]:%b", Address, Mem[Address]);
+                end
+            end
+            2'b01: begin //opcode for halfword operations
+                if(ReadWrite) begin //read
+                    DataOut[31:16] <= 16'h0000;
+                    DataOut[15:8] <= Mem[Address];
+                    DataOut[7:0] <= Mem[Address + 1];
+                    MOC <= 1;
+                end else begin  //write
+                    Mem[Address] <= DataIn[15:8];
+                    Mem[Address+1] <= DataIn[7:0];
+                    MOC <= 1;
+                end
+            end
+            2'b10: begin //opcode for word operations
+                if(ReadWrite) begin //read
+                    DataOut[31:24] <= Mem[Address];
+                    DataOut[23:16] <= Mem[Address+1];
+                    DataOut[15:8] <= Mem[Address+2];
+                    DataOut[7:0] <= Mem[Address+3];
+                    MOC <= 1;
+                end
+                else begin //write
+                    Mem[Address] <= DataIn[31:24];
+                    Mem[Address+1] <= DataIn[23:16];
+                    Mem[Address+2] <= DataIn[15:8];
+                    Mem[Address+3] <= DataIn[7:0];
+                    MOC <= 1;
+                end
+            end
+            default: begin //default to doubleword if its none of the others
+                if(ReadWrite) begin //read
+                    DataOut[31:24] <= Mem[Address];
+                    DataOut[23:16] <= Mem[Address+1];
+                    DataOut[15:8] <= Mem[Address+2];
+                    DataOut[7:0] <= Mem[Address+3];
+                    #2
+                    DataOut[31:24] <= Mem[Address+4];
+                    DataOut[23:16] <= Mem[Address+5];
+                    DataOut[15:8] <= Mem[Address+6];
+                    DataOut[7:0] <= Mem[Address+7];
+                    MOC <= 1;
+                end
+                else begin //write 
+                    Mem[Address] <= DataIn[31:24];
+                    Mem[Address+1] <= DataIn[23:16];
+                    Mem[Address+2] <= DataIn[15:8];
+                    Mem[Address+3] <= DataIn[7:0];
+                    #2
+                    Mem[Address+4] <= DataIn[31:24];
+                    Mem[Address+5] <= DataIn[23:16];
+                    Mem[Address+6] <= DataIn[15:8];
+                    Mem[Address+7] <= DataIn[7:0];
+                    MOC <= 1;
+                end
+            end
+        endcase 
+    end
+end
+endmodule
+////////////// END RAM
+
+////////////// BEGIN CONDITION TESTER
+module ConditionTester (output reg Cond, input C, Z, N, V, input [3:0] CC);
+always @ (*) begin
+case(CC)
+    4'h0: begin
+        Cond <= Z; //EQ Equal
+    end
+    4'h1: begin
+        Cond <= ~Z; //NE Not equal
+    end
+    4'h2: begin
+        Cond <= C; //CS/HS Unsigned higher or same
+    end
+    4'h3: begin
+        Cond <= ~C; //CC/LO Unsigned lower
+    end
+    4'h4: begin
+        Cond <= N; //MI Mius
+    end
+    4'h5: begin
+        Cond <= ~N; //PL Positive or Zero
+    end
+    4'h6: begin
+        Cond <= V; //VS Overflow
+    end
+    4'h7: begin
+        Cond <= ~V; //VC No overflow
+    end
+    4'h8: begin
+        Cond <= C & ~Z; //HI Unsigned higher //test this, might be &&?
+    end
+    4'h9: begin
+        Cond <= ~C | Z; //LS Unsigned lower or same
+    end
+    4'hA: begin
+        Cond <= ~(N ^ V); //GE Greater or equal
+    end
+    4'hB: begin
+        Cond <= N ^ V; //LT Less than
+    end
+    4'hC: begin
+        Cond <= ~Z & (~(N ^ V)); //GT Greater than
+    end
+    4'hD: begin
+        Cond <= Z | (~(N ^ ~V)); //LE Less than or eual
+    end
+    4'hE: begin
+        Cond <= 1'b1; //AL Always
+    end
+endcase
+
+$display("__CT: Cond:%b, Z:%b, C:%b, N:%b, V:%b, CC:%b", Cond, Z, C, N, V, CC);
+
+end
+endmodule
+////////////// END CONDITION TESTER
