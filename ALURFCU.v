@@ -698,11 +698,11 @@ module ram512x8(output reg [31:0] DataOut, output reg MOC, input Enable, input R
                     DataOut[23:16] <= Mem[Address+1];
                     DataOut[15:8] <= Mem[Address+2];
                     DataOut[7:0] <= Mem[Address+3];
-                    #2
-                    DataOut[31:24] <= Mem[Address+4];
-                    DataOut[23:16] <= Mem[Address+5];
-                    DataOut[15:8] <= Mem[Address+6];
-                    DataOut[7:0] <= Mem[Address+7];
+                    // #2
+                    // DataOut[31:24] <= Mem[Address+4];
+                    // DataOut[23:16] <= Mem[Address+5];
+                    // DataOut[15:8] <= Mem[Address+6];
+                    // DataOut[7:0] <= Mem[Address+7];
                     MOC <= 1;
                 end
                 else begin //write 
@@ -710,11 +710,11 @@ module ram512x8(output reg [31:0] DataOut, output reg MOC, input Enable, input R
                     Mem[Address+1] <= DataIn[23:16];
                     Mem[Address+2] <= DataIn[15:8];
                     Mem[Address+3] <= DataIn[7:0];
-                    #2
-                    Mem[Address+4] <= DataIn[31:24];
-                    Mem[Address+5] <= DataIn[23:16];
-                    Mem[Address+6] <= DataIn[15:8];
-                    Mem[Address+7] <= DataIn[7:0];
+                    // #2
+                    // Mem[Address+4] <= DataIn[31:24];
+                    // Mem[Address+5] <= DataIn[23:16];
+                    // Mem[Address+6] <= DataIn[15:8];
+                    // Mem[Address+7] <= DataIn[7:0];
                     MOC <= 1;
                 end
             end
