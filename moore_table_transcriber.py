@@ -6,7 +6,7 @@ with open('moore_table_sheet.txt') as csv_file:
     csv_reader = csv.reader(csv_file, delimiter=',')
     state = 0
     for row in csv_reader:
-        micro_signals.write("38'b")
+        micro_signals.write("%d'b" % (len(row)))
         for bit in row:
             micro_signals.write("%s" % (bit))
         micro_signals.write(", //%d\n" % (state))
