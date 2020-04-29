@@ -1,4 +1,12 @@
 module LetsGo;
+
+////////// Instructions
+// E5 C6 40 E4 - 32'b1110_010_11100_0110_0100_000011100100; //estado 8 STRB R4,[R6,#+?]
+// E0 86 40 E4 - 32'b1110_000_0100_0_0110_0100_00001110_0100; //estado 5 - ADD R4,R6,R4,ROR #?
+// E7 C6 40 04 - 32'b1110_011_11100_0110_0100_000000000100;// estado 16 STRB register offset ADD
+// EA C6 40 E4 - 32'b1110_101_01100_0110_0100_000011100100; // estado 64 Branch instruction
+//////////
+
 /////// BEGIN VARIABLES AND OBJECTS
 reg Clk, reset;
 
@@ -46,15 +54,15 @@ wire [31:0] mdrOut;
 wire [31:0] muxEOut;
 wire [3:0] muxFOut;
 
-integer fi, code, i; reg [7:0] data; reg [31:0] Adr; //variables to handle file info
+integer fi, code, i; reg [7:0] data; reg [31:0] Adr, EfAdr; //variables to handle file info
 
 
 ControlUnit CU(MF, FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MA, MB, MC, sizeOP, MD, ME, OP4OP0, current_state, IRBus, Cond, MOC, reset, Clk);
 RegisterFile RF(PA, PB, aluOut, A, muxFOut, C, Clk, RFld);
 alu_32 ALU(aluOut, ALU_flags[3], ALU_flags[2], ALU_flags[1], ALU_flags[0], PA, AluB, OP[4:0], Cin);
 ram512x8 RAM(DataOut, MOC, MOV, R_W, Address, mdrOut, sizeOP);
-// ConditionTester condition_tester(Cond, FROut[3], FROut[2], FROut[1], FROut[0], IRBus[31:28]); //use this one cuando vayas a usar FR
-ConditionTester condition_tester(Cond, ALU_flags[3], ALU_flags[2], ALU_flags[1], ALU_flags[0], IRBus[31:28]); 
+ConditionTester condition_tester(Cond, FROut[3], FROut[2], FROut[1], FROut[0], IRBus[31:28]); //use this one cuando vayas a usar FR
+// ConditionTester condition_tester(Cond, ALU_flags[3], ALU_flags[2], ALU_flags[1], ALU_flags[0], IRBus[31:28]); 
 shift_sign_extender SASExtender(saseOut, ALU_flags[3], IRBus, PB, FROut[3]);
 
 Multiplexer4x2_4 MuxA(A,IRBus[19:16],IRBus[15:12],number15,noValue_4, MA);
@@ -123,7 +131,23 @@ initial begin //BEGIN PRINT
 #50 //delay to wait for precharge things
 $display("\n~~~~~~~~Initiating ALURFCU simulation~~~~~~~~\n");
 // $monitor("%h    %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b",IR,aluOut,OP,current_state,FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MD, ME, MA, MB, MC,Clk,reset, $time); 
-    $monitor("IR:%x, Dout:%x, AluF:%b, State:%d, RFld:%b, MA:%b, MB:%b, MC:%b, MD:%b, OP:%b, IRld:%b, MARld:%b, R_W:%b, MOV:%b, MOC:%b, Cond:%b, Clk:%b, reset:%b, t:%0d", IRBus, DataOut, ALU_flags, current_state, RFld, MA, MB, MC, MD, OP4OP0, IRld, MARld, R_W, MOV, MOC, Cond, Clk, reset, $time);
+    $monitor("IR:%x, Dout:%x, sizeOP:%b, State:%d, RFld:%b, MA:%b, MB:%b, MC:%b, MD:%b, OP:%b, IRld:%b, MARld:%b, R_W:%b, MOV:%b, MOC:%b, Cond:%b, Clk:%b, reset:%b, t:%0d", IRBus, DataOut, sizeOP, current_state, RFld, MA, MB, MC, MD, OP4OP0, IRld, MARld, R_W, MOV, MOC, Cond, Clk, reset, $time);
+end
+
+initial begin //initial test instructions
+#551
+    Adr = 7'b0000000; //Address of instruction being tested 
+    EfAdr = 5 + 228;
+    $display("----- Memory contents after running: %h ----- time:%0d",{RAM.Mem[Adr], RAM.Mem[Adr+1], RAM.Mem[Adr+2], RAM.Mem[Adr+3]}, $time);                       
+
+    repeat (4) begin //each address is a byte, so this tells amount of bytes to show 
+        #1;
+        $display("__RAM_After_Testing: data in address %d = %x, time: %0d", Adr, RAM.Mem[EfAdr], $time);
+        #1;
+        EfAdr = EfAdr + 1;
+        #1;
+    end                                     
+    $display("----- END TESTING REPORT ----- time:%0d", $time);                                               
 end
 
 /////// END INITIALS
@@ -311,7 +335,7 @@ module Microstore (output reg [38:0] out, output reg [9:0] current_state, input 
         parameter[0:39 * 65 - 1] CR_states = { //cambiar aqui 65 por el numero de estados que hay 
         39'b001000000011101001101000110000000000000, //0
         39'b000010001000001010000000110000000000000, //1
-        39'b001000111000101010001000110000000000000, //2
+        39'b001000111000101010001_10_0110000000000000, //2
         39'b000100110000000000000001011000000000011, //3
         39'b000000000000000000000001000010000000001, //4
         39'b010000010000000010000000000000001, //5
@@ -479,6 +503,10 @@ Multiplexer16x4 muxA (PA, I0, I1, I2, I3, I4, I5, I6, I7, I8, I9, I10, I11, I12,
 
 Multiplexer16x4 muxB (PB, I0, I1, I2, I3, I4, I5, I6, I7, I8, I9, I10, I11, I12, I13, I14, I15, B);
 
+initial begin
+I4 <= 32'b00000000000000000000000000000101;
+end
+
 endmodule
 
 
@@ -639,7 +667,7 @@ always @(posedge Clk) begin
     if(LE) begin 
         Q <= D;
     end
-    $display("__FR: mdrOut:%b, t:%0d", Q, $time);
+    $display("__FR: FROut:%b, t:%0d", Q, $time);
 end
 endmodule
 
