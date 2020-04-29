@@ -733,6 +733,7 @@ integer fi, code, i; reg [7:0] data; reg [31:0] Adr; //variables to handle file 
 
 //////////////////////// INITIALS ///////////////////////
 
+
 initial begin //initial to precharge ramobj's memory with the file
     $display("----- Initiating Precharge -----");
     fi = $fopen("PF1_Vega_Rodriguez_Jorge_ramdata.txt","r");
