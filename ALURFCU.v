@@ -3,6 +3,7 @@ module LetsGo;
 ////////// Instructions
 // E5 C6 40 E4 - 32'b1110_010_11100_0110_0100_000011100100; //estado 8 STRB R4,[R6,#+?]
 // E0 86 40 E4 - 32'b1110_000_0100_0_0110_0100_00001110_0100; //estado 5 - ADD R4,R6,R4,ROR #?
+// <hex for instr> - 32'b<bits for instruction>; //estado 7 - <syntax for add imm>
 // E7 C6 40 04 - 32'b1110_011_11100_0110_0100_000000000100;// estado 16 STRB register offset ADD
 // EA C6 40 E4 - 32'b1110_101_01100_0110_0100_000011100100; // estado 64 Branch instruction
 //////////
@@ -142,7 +143,7 @@ initial begin //initial test instructions
 
     repeat (4) begin //each address is a byte, so this tells amount of bytes to show 
         #1;
-        $display("__RAM_After_Testing: data in address %d = %x, time: %0d", Adr, RAM.Mem[EfAdr], $time);
+        $display("__RAM_After_Testing: data in address %d = %x, time: %0d", EfAdr, RAM.Mem[EfAdr], $time);
         #1;
         EfAdr = EfAdr + 1;
         #1;
@@ -340,7 +341,7 @@ module Microstore (output reg [38:0] out, output reg [9:0] current_state, input 
         39'b000000000000000000000001000010000000001, //4
         39'b010000010000000010000000000000001, //5
         39'b010000010000000000000000000000001, //6
-        39'b010000010000000010000000000000001, //7
+        39'b001000000001000000000100100000000000001, //7
         39'b000010000001001000100000110000000000000, //8
         39'b000001010100001110000000110000000000000, //9
         39'b000000010000000000000000110000000000000, //10
@@ -476,7 +477,7 @@ wire [15:0] BDselect;
 wire [31:0] I0, I1, I2, I3, I4, I5, I6, I7, I8, I9, I10, I11, I12, I13, I14, I15;
 
 always@(I15, rfLd) begin
-    $display("__R15: %b, Clock:%b, t:%0d", I15, clk, $time);
+    $display("__R15: %b, Clock:%b, t:%0d\n__R4: %b, Clock:%b, t:%0d", I15, clk, $time, I4, clk, $time);
 end
 
 binaryDecoder16bit decoder (BDselect, C, rfLd);
@@ -502,10 +503,6 @@ register32bit r15 (I15, PC, clk, BDselect[15]); // Program Counter
 Multiplexer16x4 muxA (PA, I0, I1, I2, I3, I4, I5, I6, I7, I8, I9, I10, I11, I12, I13, I14, I15, A);
 
 Multiplexer16x4 muxB (PB, I0, I1, I2, I3, I4, I5, I6, I7, I8, I9, I10, I11, I12, I13, I14, I15, B);
-
-initial begin
-I4 <= 32'b00000000000000000000000000000101;
-end
 
 endmodule
 
@@ -568,6 +565,9 @@ endmodule
 
 module register32bit(output reg [31:0] Q, input [31:0] D, input clk, ld);
 // initial Q <= 32'd0;
+// initial begin
+// Q <= 32'b00000000000000000000000000000101;
+// end
   always @ (posedge clk)
   if(ld) Q <= D;
 endmodule
