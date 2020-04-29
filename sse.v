@@ -91,8 +91,11 @@ begin
         else if(instruction[4]==1'b1 && instruction[7]==1'b1 && instruction[22:21]==2'b00 && instruction[24]== 1'b0)
                 extender_out = B;
     end
-    3'b101:  
-        {extender_out} = {{8{instruction[23]}},instruction[23:0]} << 2;
+    3'b101:  begin
+        {extender_out} = {{6{instruction[23]}},instruction[23:0]} <<2;
+        
+
+        end
     endcase
         
 
