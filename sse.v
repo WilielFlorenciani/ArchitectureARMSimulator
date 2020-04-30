@@ -9,12 +9,17 @@ begin
     case (instruction[27:25])
     3'b001: 
         begin
-            {temp} = instruction[7:0];
-            {extender_out} = {temp,temp} >>(2*instruction[11:8]);
             if(instruction[11:8]==4'b0000)
+                begin
+                extender_out = instruction[7:0];
                 carry = Cin;
+                end
             else
-                carry = extender_out[31];
+                begin
+                    temp = instruction[7:0];
+                    extender_out = {temp,temp} >>(2*{instruction[11:8]});
+                    carry = extender_out[31];
+                end
         end 
     3'b000: 
     begin
