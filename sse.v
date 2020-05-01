@@ -75,7 +75,7 @@ begin
                 end
             else if(instruction[6:5]== 2'b11)
                     begin
-                         extender_out = {B, B} >> instruction[11:7];
+                         extender_out =  B >> instruction[11:7];
                          carry = B[instruction[11:7]-1];
                     end
         end
