@@ -1,12 +1,14 @@
 module LetsGo;
 
 ////////// Instructions 
-// E5 C1 20 E4 - 32'b1110_010_11100_0001_0010_000011100100; //estado 8 STRB R2,[R1,#+?] --> 11 in 241
-// E0 86 40 E4 - 32'b1110_000_0100_0_0110_0100_00001110_0100; //estado 5 - ADD R4,R6,R4,ROR #?
-// E2 8F 10 09 - 32'b<bits for instruction>; //estado 7 - ADD R1, R15, #0d9 //temp --> R1 = 13
-// E2 8F 20 03 - 32'b<bits for instruction>; //estado 7 - ADD R2, R15, #d3 //temp --> R2 = 11
+// E5 C1 20 E4 - 32'b1110_010_11100_0001_0010_000011100100; //estado 8 STRB R2,[R1,#228] --> 11 in 241 // it works 
+// E08120E2 - 32'b1110_000_0100_0_0110_0100_00001110_0100; //estado 5 - ADD R2,R1,R2,ROR #1 -> 001011 --> ROR #1: 000101; 5 + 13 = 18 --> 10010 in r2 
+// E2 8F 10 09 - 32'b<bits for instruction>; //estado 7 - ADD R1, R15, #0d9 //temp --> R1 = 13        // it works 
+// E2 8F 20 03 - 32'b<bits for instruction>; //estado 7 - ADD R2, R15, #d3 //temp --> R2 = 11         // it works 
 // E7 C6 40 04 - 32'b1110_011_11100_0110_0100_000000000100;// estado 16 STRB register offset ADD
 // EA C6 40 E4 - 32'b1110_101_01100_0110_0100_000011100100; // estado 64 Branch instruction
+//
+//  
 //////////
 // 32'b1110_001_0100_0_1111_0001_0000_00001001 //instruccion estado 7 ADD R1, R15, #0d9 E2801009
 //32'b1110_001_0100_0_1111_0010_0000_00000011 // instruction estado 7 ADD R2, R15, #d3  E2802003
@@ -116,7 +118,7 @@ end
 initial begin
 #50 //so that clock starts when precharge tasks are done 
   Clk <= 1'b0;
-  repeat(50) #5 Clk = ~Clk;
+  repeat(40) #5 Clk = ~Clk;
 end
 
 initial begin
@@ -141,7 +143,7 @@ end
 initial begin //initial test instructions
 #551
     Adr = 7'b0000000; //Address of instruction being tested 
-    EfAdr = 13 + 228;
+    EfAdr = 13 - 10;
     $display("----- Memory contents after running: %h ----- time:%0d",{RAM.Mem[Adr], RAM.Mem[Adr+1], RAM.Mem[Adr+2], RAM.Mem[Adr+3]}, $time);                       
 
     repeat (4) begin //each address is a byte, so this tells amount of bytes to show 
@@ -361,13 +363,13 @@ endmodule
 
 module Microstore (output reg [38:0] out, output reg [9:0] current_state, input reset, input [9:0] next_state);
     //n2n1n0 inv s1s0 moore cr(6)
-        parameter[0:39 * 345 - 1] CR_states = { //cambiar aqui 65 por el numero de estados que hay 
+        parameter[0:39 * 345 - 1] CR_states = { //cambiar aqui 345 por el numero de estados que hay 
         39'b001000000011101001101000110000000000000, //0
         39'b000010001000001010000000110000000000000, //1
         39'b001000111000101010001100110000000000000, //2
         39'b000100110000000000000001011000000000011, //3
         39'b000000000000000000000001000010000000001, //4
-        39'b001000000001000000000000100000000000001, //5
+        39'b001000000001010000100000100000000000001, //5
         39'b001000000000000000000000100000000000001, //6
         39'b001000000001010000100100100000000000001, //7
         39'b000010000001001000100000110000000000000, //8
@@ -786,7 +788,7 @@ wire [15:0] BDselect;
 wire [31:0] I0, I1, I2, I3, I4, I5, I6, I7, I8, I9, I10, I11, I12, I13, I14, I15;
 
 always@(I15, rfLd) begin
-    $display("__R15: %b, Clock:%b, t:%0d\n__R1: %b, Clock:%b, t:%0d\n__R2: %b, Clock:%b, t:%0d", I15, clk, $time, I1, clk, $time, I2, clk, $time);
+    $display("__R15: %b, Clock:%b, t:%0d\n__R1: %b, Clock:%b, t:%0d\n__R2: %b, Clock:%b, t:%0d\n__R3: %b, Clock:%b, t:%0d", I15, clk, $time, I1, clk, $time, I2, clk, $time, I3, clk, $time);
 end
 
 binaryDecoder16bit decoder (BDselect, C, rfLd);
@@ -1203,7 +1205,7 @@ begin
                 end
             else if(instruction[6:5]== 2'b11)
                     begin
-                         extender_out = {B, B} >> instruction[11:7];
+                         extender_out =  B >> instruction[11:7];
                          carry = B[instruction[11:7]-1];
                     end
         end
@@ -1247,34 +1249,5 @@ begin
 
 end           
 endmodule
-
-
-module test;
-
-reg [31:0] inst;
-reg cin;
-wire [31:0] out;
-wire carry;
-reg [31:0] RM;
-
-initial begin
-   cin = 1'b0; 
-   RM = 32'b00000000000000000000000000000011;
-end
-
-initial begin
- inst = 32'b00000000000001111111000000000000;
-//10 inst = 32'b0000000101010000000000111001111;
-end
-
-shift_sign_extender sse(out,carry,inst,RM, cin);
-
-// initial begin
-// $display("Testing");
-// $monitor("out:%b    inst: %b   carry:%b", out, inst, carry);
-// end
-
-endmodule
-
 ////////////// END SHIFTER SIGN EXTENDER
 
