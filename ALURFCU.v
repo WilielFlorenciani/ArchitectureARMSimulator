@@ -7,6 +7,8 @@ module LetsGo;
 // E7 C6 40 04 - 32'b1110_011_11100_0110_0100_000000000100;// estado 16 STRB register offset ADD
 // EA C6 40 E4 - 32'b1110_101_01100_0110_0100_000011100100; // estado 64 Branch instruction
 //////////
+// 32'b1110_001_0100_0_1111_0001_0000_00001001 //instruccion estado 7 ADD R1, R15, #0d9 E2801009
+//32'b1110_001_0100_0_1111_0010_0000_00000011 // instruction estado 7 ADD R2, R15, #d3  E2802003
 
 /////// BEGIN VARIABLES AND OBJECTS
 reg Clk, reset;
@@ -288,45 +290,70 @@ module Encoder(output reg [9:0] Out, input [31:0] Instruction);
 always @(Instruction) begin
 case(Instruction[27:25])
     3'b001: begin
-            if(Instruction[24:21] == 4'b0100)
-                 Out = 7'b0000111;
+            case(Instruction[24:21])
+            //case de opcode de la instruccion
+            4'b0100: Out = 10'b0000000111;
+            endcase
             end
     3'b000: begin
-            if((Instruction[24:21] == 4'b0100) && (Instruction[4] == 1'b0))
-                Out = 7'b0000101;
-            else if((Instruction[24:21] == 4'b0100) && (Instruction[11:5]== 7'b0000000))
-                Out = 7'b0000110;
+            //case de opcode de la instruccion
+            case(Instruction[24:21])
+                4'b0100: begin 
+                        if(Instruction[4] == 1'b0)
+                                begin
+                                case(Instruction[6:5]) 
+                                    // logical shift left
+                                2'b00:  Out = 10'b0000000101;
+                                endcase
+                                end
+                        else if(Instruction[11:5]== 7'b0000000)
+                             Out = 10'b0000000110;
+                        end
+            endcase
+            
             end
     3'b010: begin
-            if(Instruction[24:20]== 5'b11100)
-                 Out = 7'b0001000;
-            else if(Instruction[24:20]== 5'b10100)
-                Out = 7'b0001100;
+            case(Instruction[24:20])
+                //strb
+                5'b11100:   Out = 10'b0000001000;
+                5'b10100:   Out = 10'b0000001100;
+                5'b11110:   Out = 10'b0000011000;
+                5'b10110:   Out = 10'b0000011101;
+                5'b01100:   Out = 10'b0000101100;
+                5'b00100:   Out = 10'b0000110001;
+                //str
+                5'b11000:   Out = 10'b0001000001;
+                5'b10000:   Out = 10'b0001000101;
+                5'b11010:   Out = 10'b0001010001;
+                5'b10010:   Out = 10'b0001010110;
+                5'b01000:   Out = 10'b0001100101;
+                5'b00000:   Out = 10'b0001101010;
+            endcase
             end
     3'b011: begin
             if(Instruction[11:4]== 8'b00000000)
                 begin
                 case(Instruction[24:20])
-                    5'b11100:   Out = 7'b0010000;
-                    5'b10100:   Out = 7'b0010100; 
-                    5'b11110:   Out = 7'b0100010;
-                    5'b10110:   Out = 7'b0100010;
-                    5'b01100:   Out = 7'b0110110;
-                    5'b00100:   Out = 7'b0111011;
+                    //strb register
+                    5'b11100:   Out = 10'b0000010000;
+                    5'b10100:   Out = 10'b0000010100; 
+                    5'b11110:   Out = 10'b0000100010;
+                    5'b10110:   Out = 10'b0000100010;
+                    5'b01100:   Out = 10'b0000110110;
+                    5'b00100:   Out = 10'b0000111011;
+                    //str register
+                    5'b11000:   Out = 10'b0001001001;
+                    5'b10000:   Out = 10'b0001001101;
+                    5'b11010:   Out = 10'b0001011011;
+                    5'b10010:   Out = 10'b0001100000;
+                    5'b01000:   Out = 10'b0001101111;
+                    5'b00000:   Out = 10'b0001110100;
                 endcase
                 end
             end
-    3'b010: begin
-            case(Instruction[24:20]) 
-              5'b11110: Out = 7'b0011000;
-              5'b10110: Out = 7'b0011101; 
-              5'b01100: Out = 7'b0101100;
-              5'b00100: Out = 7'b0110001;
-            endcase
-            end
-    3'b101: Out = 7'b1000000;
+    3'b101: Out = 10'b0001000000;
 
-    default:    Out = 7'b0000001;
+    default:    Out = 10'b0000000001;
 endcase
 end
 endmodule
@@ -426,7 +453,7 @@ endmodule
 module alu_32 (output reg [31:0] Out, output reg Carry,Zero,Neg,Vflow, input [31:0] A,B, input [4:0] Sel,input Cin);
 
 always @(*) begin
-// $display("__ALU: A:%b, B:%b, Sel:%b, aluOut:%b, t:%0d", A, B, Sel, Out, $time);
+ $display("__ALU: A:%b, B:%b, Sel:%b, aluOut:%b, t:%0d", A, B, Sel, Out, $time);
     // Out = 32'b0;
     // Carry = 1'b0;
     // Zero = 1'b0;
