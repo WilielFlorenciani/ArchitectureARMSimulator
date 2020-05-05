@@ -299,6 +299,156 @@ case(Instruction[27:25])
             endcase
             end
     3'b000: begin
+            if(Instruction[24]==1'b1 && Instruction[7]==1'b1 && Instruction[4]==1'b1)
+                begin
+                //strh
+                if(Instruction[20]==1'b0 && Instruction[6:5]==2'b01)
+                    begin
+                        case(Instruction[23:21])
+                        // immed add
+                            3'b110: Out = 10'b0001111001;
+                        //immed sub
+                            3'b010: Out = 10'b0001111101;
+                        //immed pre-index add
+                            3'b111: Out = 10'b0010001001;
+                        //immed pre-index sub
+                            3'b011: Out = 10'b0010001110;
+                        //register offset add
+                            3'b100: Out = 10'b0010000001;
+                        //register offset sub
+                            3'b000: Out = 10'b0010000101;
+                        //register pre-index add
+                            3'b101: Out = 10'b0010010011;
+                        //register pre-index sub
+                            3'b001: Out = 10'b0010011000;
+                        endcase
+                    end
+                //ldrh
+                else if(Instruction[20]==1'b1 && Instruction[6:5]==2'b01)
+                    begin
+                        case(Instruction[23:21])
+                        //immed add
+                             3'b110:    Out = 10'b0011101001;
+                        //immed sub
+                             3'b010:    Out = 10'b0011101101;
+                         //immed pre-index add
+                            3'b111:     Out = 10'b0011111001;
+                        //immed pre-index sub
+                            3'b011:     Out = 10'b0011111110;
+                        //register offset add
+                            3'b100:     Out = 10'b0011110001;
+                        //register offset sub
+                            3'b000:     Out = 10'b0011110101;
+                        //register pre-index add
+                            3'b101:     Out = 10'b0100000011;
+                        //register pre-index sub
+                            3'b001:     Out = 10'b0100001000;
+                        endcase
+                    end
+                //ldrsb
+                else if(Instruction[20]==1'b1 && Instruction[6:5]==2'b10)
+                    begin
+                        case(Instruction[23:21])
+                            //immed add
+                                3'b110:     Out = 10'b0101011001;
+                            //immed sub
+                                3'b010:     Out = 10'b0101011110;
+                            //immed pre-index add
+                                3'b111:     Out = 10'b0101101101;
+                            //immed pre-index sub
+                                3'b011:     Out = 10'b0101110011;
+                            //register offset add
+                                3'b100:     Out = 10'b0101100011;
+                            //register offset sub
+                                3'b000:     Out = 10'b0101101000;
+                            //register pre-index add
+                                3'b101:     Out = 10'b0101111001;
+                            //register pre-index sub
+                                3'b001:     Out = 10'b0101111111;
+                        endcase
+                    end
+                //ldrsh    
+                else if(Instruction[20]==1'b1 && Instruction[6:5]==2'b11)
+                    begin
+                        case(Instruction[23:21])
+                            //immed add
+                                3'b110:     Out = 10'b0110011101;
+                            //immed sub
+                                3'b010:     Out = 10'b0110100010;
+                            //immed pre-index add
+                                3'b111:     Out = 10'b0110110001;
+                            //immed pre-index sub
+                                3'b011:     Out = 10'b0110110111;
+                            //register offset add
+                                3'b100:     Out = 10'b0110100111;
+                            //register offset sub
+                                3'b000:     Out = 10'b0110101100;
+                            //register pre-index add
+                                3'b101:     Out = 10'b0110111101;
+                            //register pre-index sub
+                                3'b001:     Out = 10'b0111000011;
+                        endcase
+                    end
+                end
+            else if(Instruction[24]==1'b0 && Instruction[7]==1'b1 && Instruction[4]==1'b1)
+                begin
+                    //strh
+                    if(Instruction[20]==1'b0 && Instruction[6:5]==2'b01)
+                        begin
+                            case(Instruction[23:21])
+                                //strh immed post-index add
+                                3'b110:     Out = 10'b0010011101;
+                                //strh immed post-index sub
+                                3'b010:     Out = 10'b0010100010;
+                                //strh register post-index add
+                                3'b100:     Out = 10'b0010100111;
+                                //strh register post-index sub
+                                3'b000:     Out = 10'b0010101100;
+                            endcase
+                        end
+                    //ldrh
+                    else if(Instruction[20]==1'b1 && Instruction[6:5]==2'b01)
+                        begin
+                           case(Instruction[23:21])
+                                //immed post-index add
+                                3'b110:     Out = 10'b0100001101;
+                                //immed post-index sub
+                                3'b010:     Out = 10'b0100010010;
+                                //register post-index add
+                                3'b100:     Out = 10'b0100010111;
+                                //register post-index sub
+                                3'b000:     Out = 10'b0100011100;
+                            endcase 
+                        end
+                    //ldrsb
+                    else if(Instruction[20]==1'b1 && Instruction[6:5]==2'b10)
+                        begin
+                            case(Instruction[23:21])
+                                //immed post-index add
+                                3'b110:     Out = 10'b0110000101;
+                                //immed post-index sub
+                                3'b010:     Out = 10'b0110001011;
+                                //register post-index add
+                                3'b100:     Out = 10'b0110010001;
+                                //register post-index sub
+                                3'b000:     Out = 10'b0110010111;
+                            endcase 
+                        end
+                    //ldrsh
+                    else if(Instruction[20]==1'b1 && Instruction[6:5]==2'b11)
+                        begin
+                            case(Instruction[23:21])
+                                //immed post-index add
+                                3'b110:     Out = 10'b0111001001;
+                                //immed post-index sub
+                                3'b010:     Out = 10'b0111001111;
+                                //register post-index add
+                                3'b100:     Out = 10'b0111010101;
+                                //register post-index sub
+                                3'b000:  Out = 10'b0111011011;
+                            endcase 
+                        end
+                end
             //case de opcode de la instruccion
             case(Instruction[24:21])
                 4'b0100: begin 
