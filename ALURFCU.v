@@ -316,19 +316,62 @@ case(Instruction[27:25])
     3'b010: begin
             case(Instruction[24:20])
                 //strb immed
+                //immed offset add
                 5'b11100:   Out = 10'b0000001000;
+                //immed offset sub
                 5'b10100:   Out = 10'b0000001100;
+                //immed pre-index add
                 5'b11110:   Out = 10'b0000011000;
+                //immed pre-index sub
                 5'b10110:   Out = 10'b0000011101;
+                //immed post-index add
                 5'b01100:   Out = 10'b0000101100;
+                //immed post-index sub
                 5'b00100:   Out = 10'b0000110001;
+                
                 //str immed
+                //immed add
                 5'b11000:   Out = 10'b0001000001;
+                //immed sub
                 5'b10000:   Out = 10'b0001000101;
+                //pre-index add
                 5'b11010:   Out = 10'b0001010001;
+                //pre-index sub
                 5'b10010:   Out = 10'b0001010110;
+                //post-index add
                 5'b01000:   Out = 10'b0001100101;
+                //post-index sub
                 5'b00000:   Out = 10'b0001101010;
+
+                //ldrb immed
+                //immed offset add
+                5'b11101:   Out = 10'b0010110001;
+                //immed offset sub
+                5'b10101:   Out = 10'b0010110101;
+                //immed pre-index add
+                5'b11111:   Out = 10'b0011000001;
+                //immed pre-index sub
+                5'b10111:   Out = 10'b0011000110;
+                //immed post-index add
+                5'b01101:   Out = 10'b0011010101;
+                //immed post-index sub
+                5'b00101:   Out = 10'b0011011010;
+                
+                //ldr immed
+                //immed offset add
+                 5'b11001:  Out = 10'b0100100001;
+                //immed offset sub
+                 5'b10001:  Out = 10'b0100100101;
+                 //immed pre-index add
+                 5'b11011:  Out = 10'b0100110001;
+                 //immed pre-index sub
+                5'b10011:   Out = 10'b0100110110;
+                  //immed post-index add
+                5'b01001:   Out = 10'b0101000101;
+                //immed post-index sub
+                5'b00001:   Out = 10'b0101001010;
+
+
             endcase
             end
     3'b011: begin
@@ -336,19 +379,60 @@ case(Instruction[27:25])
                 begin
                 case(Instruction[24:20])
                     //strb register
+                    //register add
                     5'b11100:   Out = 10'b0000010000;
+                    //register sub
                     5'b10100:   Out = 10'b0000010100; 
+                    //register pre-index add
                     5'b11110:   Out = 10'b0000100010;
+                    //pre-index sub
                     5'b10110:   Out = 10'b0000100010;
+                    //post-index add
                     5'b01100:   Out = 10'b0000110110;
+                    //post-index sub 
                     5'b00100:   Out = 10'b0000111011;
+                   
                     //str register
+                    //register add
                     5'b11000:   Out = 10'b0001001001;
+                    //register sub
                     5'b10000:   Out = 10'b0001001101;
+                    //pre-index add
                     5'b11010:   Out = 10'b0001011011;
+                    //pre-index sub
                     5'b10010:   Out = 10'b0001100000;
+                    //post-index add
                     5'b01000:   Out = 10'b0001101111;
+                    //post-index sub
                     5'b00000:   Out = 10'b0001110100;
+
+                    //ldrb register
+                    //register add
+                    5'b11101:   Out = 10'b0010111001;
+                    //register sub
+                    5'b10101:   Out = 10'b0010111101;
+                    //pre-index add
+                    5'b11111:   Out = 10'b0011001011;
+                    //pre-index sub
+                    5'b10111:   Out = 10'b0011010000;
+                    //post-index add
+                    5'b01101:   Out = 10'b0011011111;
+                    //post-index sub
+                    5'b00101:   Out = 10'b0011100100;
+
+                    //ldr register
+                    //register add
+                    5'b11001:   Out = 10'b0100101001;
+                    //register sub
+                    5'b10001:   Out = 10'b0100101101;
+                    //pre-index add
+                    5'b11011:   Out = 10'b0100111011;
+                    //pre-index sub
+                    5'b10011:   Out = 10'b0101000000;
+                    //post-index add
+                    5'b01001:   Out = 10'b0101001111;
+                    //post-index sub
+                    5'b00001:   Out = 10'b101010100;
                 endcase
                 end
             end
