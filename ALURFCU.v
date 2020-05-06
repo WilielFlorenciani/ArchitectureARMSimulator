@@ -1000,9 +1000,10 @@ always @(*) begin
     5'b01111:   Out = !B;
     5'b10000:   Out = A;
     5'b10001:   Out = A + 4;
-    5'b10010: Out = A + B + 4;
+    5'b10010:   Out = A + B + 4;
     5'b10011:  Out = A >>1; // right shift
     5'b10100:  Out = A <<1; // left shift
+    5'b10101:   Out = A - B + 4;
     endcase
     
      Zero = (~|Out ); //bitwise or
