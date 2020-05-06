@@ -5,79 +5,147 @@ wire Cond;
 reg Z, C, N, V;
 reg [3:0] CC;
 
-ConditionTester condTest (Cond, Z, C, N, V, CC);
+wire [3:0] encOut;
+reg [31:0] encIn;
+
+// ConditionTester condTest (Cond, Z, C, N, V, CC);
+MultiRegEncoder encoder (encOut, encIn);
 
 initial begin
-  $display("~~~~~ Initiating Condition Tester Test ~~~~~");
-  $monitor("Cond:%b, Z:%b, C:%b, N:%b, V:%b, CC:%b", Cond, Z, C, N, V, CC);
+  $display("~~~~~ Initiating Encoder Test ~~~~~");
+  $monitor("Out:%b, In:%b", encOut, encIn);
 end
 
-initial begin 
-  CC = 4'b1110;
-  Z = 1'b1;
-  C = 1'b0;
-  N = 1'b1;
-  V = 1'b1;
+initial begin
+encIn = 32'b0000000000000000_0000100000000000;
 end
+
+// initial begin
+//   $display("~~~~~ Initiating Condition Tester Test ~~~~~");
+//   $monitor("Cond:%b, Z:%b, C:%b, N:%b, V:%b, CC:%b", Cond, Z, C, N, V, CC);
+// end
+
+// initial begin 
+//   CC = 4'b1110;
+//   Z = 1'b1;
+//   C = 1'b0;
+//   N = 1'b1;
+//   V = 1'b1;
+// end
 
 endmodule
 
 
-
-
-
-////////////// BEGIN CONDITION TESTER
-module ConditionTester (output reg Cond, input C, Z, N, V, input [3:0] CC);
-always @ (*) begin
-case(CC)
-    4'h0: begin
-        Cond <= Z; //EQ Equal
+////////////// BEGIN ENCODERMULTI
+module MultiRegEncoder(output reg [3:0] Out, input [31:0] RegisterBit);
+always @(RegisterBit) begin
+case(RegisterBit)
+    32'h0: begin
+        Out <= 4'h0;
     end
-    4'h1: begin
-        Cond <= ~Z; //NE Not equal
+    32'h2: begin
+        Out <= 4'h1;
     end
-    4'h2: begin
-        Cond <= C; //CS/HS Unsigned higher or same
+    32'h4: begin
+        Out <= 4'h2;
     end
-    4'h3: begin
-        Cond <= ~C; //CC/LO Unsigned lower
+    32'h8: begin
+        Out <= 4'h3;
     end
-    4'h4: begin
-        Cond <= N; //MI Mius
+    32'h10: begin
+        Out <= 4'h4;
     end
-    4'h5: begin
-        Cond <= ~N; //PL Positive or Zero
+    32'h20: begin
+        Out <= 4'h5;
     end
-    4'h6: begin
-        Cond <= V; //VS Overflow
+    32'h40: begin
+        Out <= 4'h6;
     end
-    4'h7: begin
-        Cond <= ~V; //VC No overflow
+    32'h80: begin
+        Out <= 4'h7;
     end
-    4'h8: begin
-        Cond <= C & ~Z; //HI Unsigned higher //test this, might be &&?
+    32'h100: begin
+        Out <= 4'h8;
     end
-    4'h9: begin
-        Cond <= ~C | Z; //LS Unsigned lower or same
+    32'h200: begin
+        Out <= 4'h9;
     end
-    4'hA: begin
-        Cond <= ~(N ^ V); //GE Greater or equal
+    32'h400: begin
+        Out <= 4'hA;
     end
-    4'hB: begin
-        Cond <= N ^ V; //LT Less than
+    32'h800: begin
+        Out <= 4'hB;
     end
-    4'hC: begin
-        Cond <= ~Z & (~(N ^ V)); //GT Greater than
+    32'h1000: begin
+        Out <= 4'hC;
     end
-    4'hD: begin
-        Cond <= Z | (~(N ^ ~V)); //LE Less than or eual
+    32'h2000: begin
+        Out <= 4'hD;
     end
-    4'hE: begin
-        Cond <= 1'b1; //AL Always
+    32'h4000: begin
+        Out <= 4'hE;
+    end
+    32'h8000: begin
+        Out <= 4'hF;
     end
 endcase
 end
 endmodule
+////////////// END ENCODERMULTI
+
+
+////////////// BEGIN CONDITION TESTER
+// module ConditionTester (output reg Cond, input C, Z, N, V, input [3:0] CC);
+// always @ (*) begin
+// case(CC)
+//     4'h0: begin
+//         Cond <= Z; //EQ Equal
+//     end
+//     4'h1: begin
+//         Cond <= ~Z; //NE Not equal
+//     end
+//     4'h2: begin
+//         Cond <= C; //CS/HS Unsigned higher or same
+//     end
+//     4'h3: begin
+//         Cond <= ~C; //CC/LO Unsigned lower
+//     end
+//     4'h4: begin
+//         Cond <= N; //MI Mius
+//     end
+//     4'h5: begin
+//         Cond <= ~N; //PL Positive or Zero
+//     end
+//     4'h6: begin
+//         Cond <= V; //VS Overflow
+//     end
+//     4'h7: begin
+//         Cond <= ~V; //VC No overflow
+//     end
+//     4'h8: begin
+//         Cond <= C & ~Z; //HI Unsigned higher //test this, might be &&?
+//     end
+//     4'h9: begin
+//         Cond <= ~C | Z; //LS Unsigned lower or same
+//     end
+//     4'hA: begin
+//         Cond <= ~(N ^ V); //GE Greater or equal
+//     end
+//     4'hB: begin
+//         Cond <= N ^ V; //LT Less than
+//     end
+//     4'hC: begin
+//         Cond <= ~Z & (~(N ^ V)); //GT Greater than
+//     end
+//     4'hD: begin
+//         Cond <= Z | (~(N ^ ~V)); //LE Less than or eual
+//     end
+//     4'hE: begin
+//         Cond <= 1'b1; //AL Always
+//     end
+// endcase
+// end
+// endmodule
 ////////////// END CONDITION TESTER
 
 
