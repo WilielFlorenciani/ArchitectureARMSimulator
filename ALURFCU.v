@@ -54,6 +54,8 @@ wire [31:0] Address;
 wire [31:0] DataOut;
 // wire [31:0] DataIn; --> got replaced with mdrOut
 
+//Adder_4 wires
+wire [3:0] adder4Out;
 
 //MDR, MuxE, MuxF
 wire [31:0] mdrOut;
@@ -70,8 +72,9 @@ ram512x8 RAM(DataOut, MOC, MOV, R_W, Address, mdrOut, sizeOP);
 ConditionTester condition_tester(Cond, FROut[3], FROut[2], FROut[1], FROut[0], IRBus[31:28]); //use this one cuando vayas a usar FR
 // ConditionTester condition_tester(Cond, ALU_flags[3], ALU_flags[2], ALU_flags[1], ALU_flags[0], IRBus[31:28]); 
 shift_sign_extender SASExtender(saseOut, ALU_flags[3], IRBus, PB, FROut[3]);
+Adder_4 adder4(adder4Out, IR[15:12]);
 
-Multiplexer4x2_4 MuxA(A,IRBus[19:16],IRBus[15:12],number15,noValue_4, MA);
+Multiplexer4x2_4 MuxA(A,IRBus[19:16],IRBus[15:12],number15,adder4Out, MA);
 Multiplexer4x2_32 MuxB(AluB, PB, saseOut, mdrOut, noValue_32, MB );
 Multiplexer4x2_4 MuxC(C,IRBus[19:16],IRBus[15:12],number15,noValue_4, MC);
 Multiplexer2x1_5 MuxD(OP,{1'b0, IRBus[24:21]}, OP4OP0, MD);
@@ -1485,4 +1488,11 @@ begin
 end           
 endmodule
 ////////////// END SHIFTER SIGN EXTENDER
+////////////// BEGIN ADDER
+module Adder_4(output reg [3:0] out, input [3:0] in);
+always @(in)
+    out <= in + 1'b1;
+// $display("__Adder input: %d, Adder output: %d", in, out); ---
+endmodule
+////////////// END ADDER
 
