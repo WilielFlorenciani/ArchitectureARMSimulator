@@ -5,17 +5,23 @@ reg [7:0] temp;
 
 always @(*) 
 begin
-
+    //immediate shifter operand
     case (instruction[27:25])
     3'b001: 
         begin
-            {temp} = instruction[7:0];
-            {extender_out} = {temp,temp} >>(2*instruction[11:8]);
             if(instruction[11:8]==4'b0000)
+                begin
+                extender_out = instruction[7:0];
                 carry = Cin;
+                end
             else
-                carry = extender_out[31];
+                begin
+                    temp = instruction[7:0];
+                    extender_out = {temp,temp} >>(2*{instruction[11:8]});
+                    carry = extender_out[31];
+                end
         end 
+    //shift by immediate shifter opperand
     3'b000: 
     begin
         if(instruction[4]==0)
@@ -69,7 +75,7 @@ begin
                 end
             else if(instruction[6:5]== 2'b11)
                     begin
-                         extender_out = {B, B} >> instruction[11:7];
+                         extender_out =  B >> instruction[11:7];
                          carry = B[instruction[11:7]-1];
                     end
         end
@@ -93,16 +99,25 @@ begin
     end
     3'b101:  begin
         {extender_out} = {{6{instruction[23]}},instruction[23:0]} <<2;
-        
-
         end
+    //addressing mode 2
+    //immediate offset/pre/post
+    3'b010: begin
+            if((instruction[24]==1'b1 && instruction[21]==1'b0) || (instruction[24]==1'b1 && instruction[21]==1'b1) || (instruction[24]==1'b0 && instruction[21]==1'b0))
+                extender_out = instruction[11:0];
+            end
+    //register offset/pre/post
+    3'b011: begin
+                if(instruction[11:4]==8'b00000000)
+                    begin
+                       if((instruction[24]==1'b1 && instruction[21]==1'b0) || (instruction[24]==1'b1 && instruction[21]==1'b1) || (instruction[24]==1'b0 && instruction[21]==1'b0))
+                            extender_out = B; 
+                    end
+            end
     endcase
         
 
 end           
-
-//end 
-
 endmodule
 
 
