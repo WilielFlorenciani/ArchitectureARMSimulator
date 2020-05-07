@@ -17,7 +17,8 @@ initial begin
 end
 
 initial begin
-encIn = 32'b0000000000000000_0000100000000000;
+// encIn = 32'b1000_0000_0000_0000_0000_0000_0000_0000;
+encIn = {32'b1000_0000_0000_0000, 16'b0};
 end
 
 // initial begin
@@ -40,52 +41,52 @@ endmodule
 module MultiRegEncoder(output reg [3:0] Out, input [31:0] RegisterBit);
 always @(RegisterBit) begin
 case(RegisterBit)
-    32'h0: begin
+    32'h10000: begin
         Out <= 4'h0;
     end
-    32'h2: begin
+    32'h20000: begin
         Out <= 4'h1;
     end
-    32'h4: begin
+    32'h40000: begin
         Out <= 4'h2;
     end
-    32'h8: begin
+    32'h80000: begin
         Out <= 4'h3;
     end
-    32'h10: begin
+    32'h100000: begin
         Out <= 4'h4;
     end
-    32'h20: begin
+    32'h200000: begin
         Out <= 4'h5;
     end
-    32'h40: begin
+    32'h400000: begin
         Out <= 4'h6;
     end
-    32'h80: begin
+    32'h800000: begin
         Out <= 4'h7;
     end
-    32'h100: begin
+    32'h1000000: begin
         Out <= 4'h8;
     end
-    32'h200: begin
+    32'h2000000: begin
         Out <= 4'h9;
     end
-    32'h400: begin
+    32'h4000000: begin
         Out <= 4'hA;
     end
-    32'h800: begin
+    32'h8000000: begin
         Out <= 4'hB;
     end
-    32'h1000: begin
+    32'h10000000: begin
         Out <= 4'hC;
     end
-    32'h2000: begin
+    32'h20000000: begin
         Out <= 4'hD;
     end
-    32'h4000: begin
+    32'h40000000: begin
         Out <= 4'hE;
     end
-    32'h8000: begin
+    32'h80000000: begin
         Out <= 4'hF;
     end
 endcase

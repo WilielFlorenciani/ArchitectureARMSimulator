@@ -80,7 +80,7 @@ ConditionTester condition_tester(Cond, FROut[3], FROut[2], FROut[1], FROut[0], m
 // ConditionTester condition_tester(Cond, ALU_flags[3], ALU_flags[2], ALU_flags[1], ALU_flags[0], IRBus[31:28]); 
 shift_sign_extender SASExtender(saseOut, ALU_flags[3], muxHOut, PB, FROut[3]);
 Adder_4 adder4(adder4Out, IR[15:12]);
-MultiRegEncoder multireg_encoder(multiencOut, aluOut);
+MultiRegEncoder multireg_encoder(multiencOut, multiregOut);
 
 Multiplexer8x3_4 MuxA(A, IRBus[19:16], IRBus[15:12], number15, adder4Out, multiencOut, MA);
 Multiplexer4x2_32 MuxB(AluB, PB, saseOut, mdrOut, noValue_32, MB);
@@ -88,9 +88,9 @@ Multiplexer8x3_4 MuxC(C, IRBus[19:16], IRBus[15:12], number15, noValue_4, multie
 Multiplexer2x1_5 MuxD(OP,{1'b0, IRBus[24:21]}, OP4OP0, MD);
 Multiplexer2x1_32 MuxE(muxEOut, DataOut, aluOut, ME);
 Multiplexer2x1_4 MuxF(muxFOut, IRBus[3:0],IRBus[19:16], MF);
-Multiplexer2x1_32 MuxG(muxGOut, PA, {16'b0, IRBus[15:0]}, MG); //feeds alu input A
+Multiplexer2x1_32 MuxG(muxGOut, PA, {IRBus[15:0], 16'b0}, MG); //feeds alu input A
 Multiplexer2x1_32 MuxH(muxHOut, IRBus, multiregOut, MH); //feeds sase
-Multiplexer2x1_32 MuxI(muxIOut, 32'b1, aluOut, MI); //feeds multireg
+Multiplexer2x1_32 MuxI(muxIOut, 32'h10000, aluOut, MI); //feeds multireg
 Multiplexer2x1_4 MuxJ(muxJOut, IRBus[31:28], CondTestOp, MJ); //feeds condition tester 
 
 MAR Mar(Address, aluOut, MARld, Clk);
