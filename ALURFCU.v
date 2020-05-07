@@ -72,7 +72,7 @@ ram512x8 RAM(DataOut, MOC, MOV, R_W, Address, mdrOut, sizeOP);
 ConditionTester condition_tester(Cond, FROut[3], FROut[2], FROut[1], FROut[0], IRBus[31:28]); //use this one cuando vayas a usar FR
 // ConditionTester condition_tester(Cond, ALU_flags[3], ALU_flags[2], ALU_flags[1], ALU_flags[0], IRBus[31:28]); 
 shift_sign_extender SASExtender(saseOut, ALU_flags[3], IRBus, PB, FROut[3]);
-Adder_4 adder4(adder4Out, IR[15:12]);
+Adder_4 adder4(adder4Out, IRBus[15:12]);
 
 Multiplexer4x2_4 MuxA(A,IRBus[19:16],IRBus[15:12],number15,adder4Out, MA);
 Multiplexer4x2_32 MuxB(AluB, PB, saseOut, mdrOut, noValue_32, MB );
