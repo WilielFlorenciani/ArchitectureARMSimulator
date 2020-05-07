@@ -1196,7 +1196,8 @@ always @(*) begin
     5'b10010:   Out = A + B + 4;
     5'b10011:  Out = A >>1; // right shift
     5'b10100:  Out = A <<1; // left shift
-    5'b10101:   Out = A - B + 4;
+    5'b10101:  Out = A - B + 4;
+    5'b10110:   Out = B <<1;
     endcase
     
      Zero = ~(|Out ); //bitwise or
