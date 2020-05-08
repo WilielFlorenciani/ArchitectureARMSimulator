@@ -9,7 +9,8 @@ module LetsGo;
 // EA C6 40 E4 - 32'b1110_101_01100_0110_0100_000011100100; // estado 64 Branch instruction
 // E8 A1 00 0C - STMIA R1!, {R2, R3} //state 715?
 // E2 82 30 04 -> state 7, add r3, r2, #4 --> R3 = 15
-//  testing: store r2 in 13 and r3 in 14, r1 ends with 21
+//  testing: store r2=11 in 13 and r3=15 in 17, r1 ends with 21
+//  whats happening: 13 in 16, 17 in 20
 //////////
 // 32'b1110_001_0100_0_1111_0001_0000_00001001 //instruccion estado 7 ADD R1, R15, #0d9 E2801009
 //32'b1110_001_0100_0_1111_0010_0000_00000011 // instruction estado 7 ADD R2, R15, #d3  E2802003
@@ -84,7 +85,7 @@ ram512x8 RAM(DataOut, MOC, MOV, R_W, Address, mdrOut, sizeOP);
 ConditionTester condition_tester(Cond, FROut[3], FROut[2], FROut[1], FROut[0], muxJOut); //use this one cuando vayas a usar FR
 // ConditionTester condition_tester(Cond, ALU_flags[3], ALU_flags[2], ALU_flags[1], ALU_flags[0], IRBus[31:28]); 
 shift_sign_extender SASExtender(saseOut, ALU_flags[3], IRBus, PB, FROut[3]);
-Adder_4 adder4(adder4Out, IR[15:12]);
+Adder_4 adder4(adder4Out, IRBus[15:12]);
 MultiRegEncoder multireg_encoder(multiencOut, multiregOut);
 
 Multiplexer8x3_4 MuxA(A, IRBus[19:16], IRBus[15:12], number15, adder4Out, multiencOut, MA);
@@ -167,12 +168,12 @@ end
 
 initial begin //initial test instructions
 // #551
-#1000
+#1055
     Adr = 7'b0000000; //Address of instruction being tested 
     EfAdr = 13;
     $display("----- Memory contents after running: %h ----- time:%0d",{RAM.Mem[Adr], RAM.Mem[Adr+1], RAM.Mem[Adr+2], RAM.Mem[Adr+3]}, $time);                       
 
-    repeat (4) begin //each address is a byte, so this tells amount of bytes to show 
+    repeat (16) begin //each address is a byte, so this tells amount of bytes to show 
         #1;
         $display("__RAM_After_Testing: data in address %0d = %x, time: %0d", EfAdr, RAM.Mem[EfAdr], $time);
         #1;
@@ -1629,7 +1630,7 @@ always@(I15, rfLd) begin
 end
 
 initial begin 
-#1000
+#1060
     $display("------- Testing Report: Register File Contents ----------- t:%0d", $time);
     $display("__R15: %b, Clock:%b, t:%0d\n__R1: %b, Clock:%b, t:%0d\n__R2: %b, Clock:%b, t:%0d\n__R3: %b, Clock:%b, t:%0d", I15, clk, $time, I1, clk, $time, I2, clk, $time, I3, clk, $time);
     $display("------- Ends Testing Report: Register File Contents ------ t:%0d", $time);
@@ -2142,52 +2143,52 @@ endmodule
 module MultiRegEncoder(output reg [3:0] Out, input [31:0] RegisterBit);
 always @(RegisterBit) begin
 case(RegisterBit)
-    32'h0: begin
+    32'h10000: begin
         Out <= 4'h0;
     end
-    32'h2: begin
+    32'h20000: begin
         Out <= 4'h1;
     end
-    32'h4: begin
+    32'h40000: begin
         Out <= 4'h2;
     end
-    32'h8: begin
+    32'h80000: begin
         Out <= 4'h3;
     end
-    32'h10: begin
+    32'h100000: begin
         Out <= 4'h4;
     end
-    32'h20: begin
+    32'h200000: begin
         Out <= 4'h5;
     end
-    32'h40: begin
+    32'h400000: begin
         Out <= 4'h6;
     end
-    32'h80: begin
+    32'h800000: begin
         Out <= 4'h7;
     end
-    32'h100: begin
+    32'h1000000: begin
         Out <= 4'h8;
     end
-    32'h200: begin
+    32'h2000000: begin
         Out <= 4'h9;
     end
-    32'h400: begin
+    32'h4000000: begin
         Out <= 4'hA;
     end
-    32'h800: begin
+    32'h8000000: begin
         Out <= 4'hB;
     end
-    32'h1000: begin
+    32'h10000000: begin
         Out <= 4'hC;
     end
-    32'h2000: begin
+    32'h20000000: begin
         Out <= 4'hD;
     end
-    32'h4000: begin
+    32'h40000000: begin
         Out <= 4'hE;
     end
-    32'h8000: begin
+    32'h80000000: begin
         Out <= 4'hF;
     end
 endcase
