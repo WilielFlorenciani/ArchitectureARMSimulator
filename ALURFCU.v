@@ -779,8 +779,9 @@ case(Instruction[27:25])
     //load/store multiple
     3'b100: 
         begin
-            if(Instruction[20]==1'b0) //STR
+            if(Instruction[20]==1'b0) 
                 begin
+                    //STR
                     case (Instruction[24:23])
                         //Increment after
                         2'b01:  if(Instruction[21]==1'b1) //Bit W-permite update a Rn
