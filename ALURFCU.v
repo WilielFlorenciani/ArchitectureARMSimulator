@@ -7,8 +7,11 @@ module LetsGo;
 // E2 8F 20 03 - 32'b<bits for instruction>; //estado 7 - ADD R2, R15, #d3 //temp --> R2 = 11         // it works 
 // E7 C6 40 04 - 32'b1110_011_11100_0110_0100_000000000100;// estado 16 STRB register offset ADD
 // EA C6 40 E4 - 32'b1110_101_01100_0110_0100_000011100100; // estado 64 Branch instruction
-//
-//  testing: 11 --> 2
+// E8 A1 00 0C - STMIA R1!, {R2, R3} //state 715?
+// E8 81 00 0C - STMIA R1, {R2, R3} //state 724
+// E2 82 30 04 -> state 7, add r3, r2, #4 --> R3 = 15
+//  testing: store r2=11 in 13 and r3=15 in 17, r1 ends with 21
+//  whats happening: 13 in 16, 17 in 20
 //////////
 // 32'b1110_001_0100_0_1111_0001_0000_00001001 //instruccion estado 7 ADD R1, R15, #0d9 E2801009
 //32'b1110_001_0100_0_1111_0010_0000_00000011 // instruction estado 7 ADD R2, R15, #d3  E2802003
@@ -155,7 +158,7 @@ end
 initial begin
 #50 //so that clock starts when precharge tasks are done 
   Clk <= 1'b0;
-  repeat(125) #5 Clk = ~Clk;
+  repeat(200) #5 Clk = ~Clk;
 end
 
 initial begin
@@ -174,16 +177,18 @@ initial begin //BEGIN PRINT
 #50 //delay to wait for precharge things
 $display("\n~~~~~~~~Initiating ALURFCU simulation~~~~~~~~\n");
 // $monitor("%h    %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b",IR,aluOut,OP,current_state,FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MD, ME, MA, MB, MC,Clk,reset, $time); 
-    $monitor("IR:%x, Dout:%x, alu:%x, sizeOP:%b, State:%0d, RFld:%b, MA:%b, MB:%b, MC:%b, MD:%b, ME:%b, OP:%b, IRld:%b, MARld:%b, MDRld:%b, RW:%b, MOV:%b, MOC:%b, Cond:%b, Clk:%b, rst:%b, t:%0d", IRBus, DataOut, aluOut, sizeOP, current_state, RFld, MA, MB, MC, MD, ME, OP4OP0, IRld, MARld, MDRld, R_W, MOV, MOC, Cond, Clk, reset, $time);
+    // $monitor("IR:%x, Dout:%x, alu:%x, sizeOP:%b, State:%0d, RFld:%b, MA:%b, MB:%b, MC:%b, MD:%b, ME:%b, OP:%b, IRld:%b, MARld:%b, MDRld:%b, RW:%b, MOV:%b, MOC:%b, Cond:%b, Clk:%b, rst:%b, t:%0d", IRBus, DataOut, aluOut, sizeOP, current_state, RFld, MA, MB, MC, MD, ME, OP4OP0, IRld, MARld, MDRld, R_W, MOV, MOC, Cond, Clk, reset, $time);
+    $monitor("IR:%x, Dout:%x, alu:%x, sOP:%b, State:%0d, RFld:%b, MA:%b, MB:%b, MC:%b, MD:%b, ME:%b, MJ:%b, OP:%b, MARld:%b, MDRld:%b, RW:%b, MOV:%b, MOC:%b, Cond:%b, Clk:%b, t:%0d", IRBus, DataOut, aluOut, sizeOP, current_state, RFld, MA, MB, MC, MD, ME, MJ, OP4OP0, MARld, MDRld, R_W, MOV, MOC, Cond, Clk, $time);
 end
 
 initial begin //initial test instructions
-#551
+// #551
+#1055
     Adr = 7'b0000000; //Address of instruction being tested 
-    EfAdr = 13 - 11;
+    EfAdr = 13;
     $display("----- Memory contents after running: %h ----- time:%0d",{RAM.Mem[Adr], RAM.Mem[Adr+1], RAM.Mem[Adr+2], RAM.Mem[Adr+3]}, $time);                       
 
-    repeat (4) begin //each address is a byte, so this tells amount of bytes to show 
+    repeat (16) begin //each address is a byte, so this tells amount of bytes to show 
         #1;
         $display("__RAM_After_Testing: data in address %0d = %x, time: %0d", EfAdr, RAM.Mem[EfAdr], $time);
         #1;
@@ -416,6 +421,7 @@ case(Instruction[27:25])
                 end
             end    
     3'b000: begin
+            //addressing mode 3
             if(Instruction[24]==1'b1 && Instruction[7]==1'b1 && Instruction[4]==1'b1)
                 begin
                 //strh
@@ -438,6 +444,50 @@ case(Instruction[27:25])
                             3'b101: Out = 10'b0010010011;
                         //register pre-index sub
                             3'b001: Out = 10'b0010011000;
+                        endcase
+                    end
+                //STRD
+                else if(Instruction[20]==1'b0 && Instruction[6:5]==2'b11)
+                    begin
+                        case(Instruction[23:21])
+                        //immed add
+                             3'b110:    Out = 10'b0111111011;
+                        //immed sub
+                             3'b010:    Out = 10'b1000000011;
+                         //immed pre-index add
+                            3'b111:     Out = 10'b1000011011;
+                        //immed pre-index sub
+                            3'b011:     Out = 10'b1000100100;
+                        //register offset add
+                            3'b100:     Out = 10'b1000001011;
+                        //register offset sub
+                            3'b000:     Out = 10'b1000010011;
+                        //register pre-index add
+                            3'b101:     Out = 10'b1000101101;
+                        //register pre-index sub
+                            3'b001:     Out = 10'b1000110110;
+                        endcase
+                    end
+                //LDRD
+                else if(Instruction[20]==1'b0 && Instruction[6:5]==2'b10)
+                    begin
+                        case(Instruction[23:21])
+                        //immed add
+                             3'b110:    Out = 10'b1001100011;
+                        //immed sub
+                             3'b010:    Out = 10'b1001101011;
+                         //immed pre-index add
+                            3'b111:     Out = 10'b1010000011;
+                        //immed pre-index sub
+                            3'b011:     Out = 10'b1010001100;
+                        //register offset add
+                            3'b100:     Out = 10'b1001110011;
+                        //register offset sub
+                            3'b000:     Out = 10'b1001111011;
+                        //register pre-index add
+                            3'b101:     Out = 10'b1010010101;
+                        //register pre-index sub
+                            3'b001:     Out = 10'b1010011110;
                         endcase
                     end
                 //ldrh
@@ -523,6 +573,20 @@ case(Instruction[27:25])
                                 3'b000:     Out = 10'b0010101100;
                             endcase
                         end
+                    //STRD
+                    else if(Instruction[20]==1'b0 && Instruction[6:5]==2'b11)
+                        begin
+                            case(Instruction[23:21])
+                                //strh immed post-index add
+                                3'b110:     Out = 10'b1000111111;
+                                //strh immed post-index sub
+                                3'b010:     Out = 10'b1001001000;
+                                //strh register post-index add
+                                3'b100:     Out = 10'b1001010001;
+                                //strh register post-index sub
+                                3'b000:     Out = 10'b1001011010;
+                            endcase
+                        end
                     //ldrh
                     else if(Instruction[20]==1'b1 && Instruction[6:5]==2'b01)
                         begin
@@ -565,88 +629,25 @@ case(Instruction[27:25])
                                 3'b000:  Out = 10'b0111011011;
                             endcase 
                         end
-                end
-                else if(Instruction[4]==1'b0)
-                    if(Instruction[20]==1'b0)
+                    //LDRD
+                    else if(Instruction[20]==1'b0 && Instruction[6:5]==2'b10)
                         begin
-                            case(Instruction[24:21])
-                            //case de opcode de la instruccion
-                            //AND
-                            4'b0000:    Out = 10'b0111110100;
-                            //EOR
-                            4'b0001:    Out = 10'b0111111000;
-                            //SUB
-                            4'b0010:    Out = 10'b0111101001;
-                            //RSB
-                            4'b0011:    Out = 10'b0111101100;
-                            //ADD
-                            4'b0100:    Out = 10'b0000000111;
-                            //ADC
-                            4'b0101:    Out = 10'b0111101110;
-                            //SBC
-                            4'b0110:    Out = 10'b0111110000;
-                            //RSC
-                            4'b0111:    Out = 10'b0111110010;
-                            //TST
-                            4'b1000:    Out = 10'b0111100111;
-                            //TEQ
-                            4'b1001:    Out = 10'b0111101000;
-                            //CMP
-                            4'b1010:    Out = 10'b0111100101;
-                            //CMN
-                            4'b1011:    Out = 10'b0111100110;
-                            //ORR
-                            4'b1100:    Out = 10'b0111111010;
-                            //MOV
-                            4'b1101:    Out = 10'b0111100010;
-                            //BIC
-                            4'b1110:    Out = 10'b0111110110;
-                            //MVN
-                            4'b1111:    Out = 10'b0111100100;
-                            endcase
+                            case(Instruction[23:21])
+                                //immed post-index add
+                                3'b110:     Out = 10'b1010100111;
+                                //immed post-index sub
+                                3'b010:     Out = 10'b1010110000;
+                                //register post-index add
+                                3'b100:     Out = 10'b1010111001;
+                                //register post-index sub
+                                3'b000:     Out = 10'b1011000010;
+                            endcase 
                         end
-                    else
-                        begin
-                            case(Instruction[24:21])
-                         
-                            //ANDS
-                            4'b0000:    Out = 10'b0111110011;
-                            //EORS
-                            4'b0001:    Out = 10'b0111110111;
-                            //SUBS
-                            4'b0010:    Out = 10'b0111101010;
-                            //RSBS
-                            4'b0011:    Out = 10'b0111101011;
-                            //ADDS
-                            4'b0100:    Out = 10'b0000000101;
-                            //ADCS
-                            4'b0101:    Out = 10'b0111101101;
-                            //SBCS
-                            4'b0110:    Out = 10'b0111101111;
-                            //RSCS
-                            4'b0111:    Out = 10'b0111110001;
-                            //TST
-                            4'b1000:    Out = 10'b0111100111;
-                            //TEQ
-                            4'b1001:    Out = 10'b0111101000;
-                            //CMP
-                            4'b1010:    Out = 10'b0111100101;
-                            //CMN
-                            4'b1011:    Out = 10'b0111100110;
-                            //ORRS
-                            4'b1100:    Out = 10'b0111111001;
-                            //MOVS
-                            4'b1101:    Out = 10'b0111100001;
-                            //BICS
-                            4'b1110:    Out = 10'b0111110101;
-                            //MVNS
-                            4'b1111:    Out = 10'b0111100011;
-                            endcase
-                        end
+                end   
             end
-            
-        
-    3'b010: begin
+
+                     
+    3'b010: begin   //adressing mode 2 immediate
             case(Instruction[24:20])
                 //strb immed
                 //immed offset add
@@ -707,7 +708,7 @@ case(Instruction[27:25])
 
             endcase
             end
-    3'b011: begin
+    3'b011: begin   //addressing mode 2 register offset
             if(Instruction[11:4]== 8'b00000000)
                 begin
                 case(Instruction[24:20])
@@ -769,7 +770,66 @@ case(Instruction[27:25])
                 endcase
                 end
             end
-    3'b101: Out = 10'b0001000000;
+
+    3'b101: Out = 10'b0001000000; //branch instruction
+    
+    //load/store multiple
+    3'b100: 
+        begin
+            if(Instruction[20]==1'b0) //STR
+                begin
+                    case (Instruction[24:23])
+                        //Increment after
+                        2'b01:  if(Instruction[21]==1'b1) //Bit W-permite update a Rn
+                                    Out = 10'b1011001011; //estado de permititr update Rn
+                                else
+                                    Out = 10'b1011010100; //estado de no update a Rn
+                        //Increment before            
+                        2'b11:  if(Instruction[21]==1'b1)
+                                    Out = 10'b0; //estado de update Rn
+                                else
+                                    Out = 10'b0; //estado de no update Rn
+                        //Decrement after
+                        2'b00:   if(Instruction[21]==1'b1)
+                                    Out = 10'b0; //estado de permitir update Rn
+                                else
+                                    Out = 10'b0; //estado de no update Rn
+                        //Decrement before
+                        2'b10:  if(Instruction[21]==1'b1)
+                                    Out = 10'b0; //estado de update Rn
+                                else
+                                    Out = 10'b0; //estado de no update Rn  
+                    endcase
+                end
+            else
+                begin
+                   //LDR 
+                   case (Instruction[24:23])
+                        //Increment after
+                        2'b01:  if(Instruction[21]==1'b1) //Bit W-permite update a Rn
+                                    Out = 10'b0; //estado de permititr update Rn
+                                else
+                                    Out = 10'b0; //estado de no update a Rn
+                        //Increment before            
+                        2'b11:  if(Instruction[21]==1'b1)
+                                    Out = 10'b0; //estado de update Rn
+                                else
+                                    Out = 10'b0; //estado de no update Rn
+                        //Decrement after
+                        2'b00:   if(Instruction[21]==1'b1)
+                                    Out = 10'b0; //estado de permitir update Rn
+                                else
+                                    Out = 10'b0; //estado de no update Rn
+                        //Decrement before
+                        2'b10:  if(Instruction[21]==1'b1)
+                                    Out = 10'b0; //estado de update Rn
+                                else
+                                    Out = 10'b0; //estado de no update Rn  
+                    endcase
+                   
+                end
+
+        end
 
     default:    Out = 10'b0000000001;
 endcase
@@ -778,7 +838,7 @@ endmodule
 
 module Microstore (output reg [51:0] out, output reg [9:0] current_state, input reset, input [9:0] next_state);
     //n2n1n0 inv s1s0 moore cr(6)
-        parameter[0:52 * 724 - 1] CR_states = { //  cambiar aqui 724 por el numero total de estados que hay 
+        parameter[0:52 * 734 - 1] CR_states = { //  cambiar aqui 724 por el numero total de estados que hay 
         52'b0000000000001000000000110101001101000110000000000000, //0
         52'b0000000000000010000100000001010000000110000000000000, //1
         52'b0000000000001000110100000101010001100110000000000000, //2
@@ -1502,7 +1562,18 @@ module Microstore (output reg [51:0] out, output reg [9:0] current_state, input 
         52'b0000000000000001001000000001110000100110000000000000, //720
         52'b0000000000000000010000000000000000100110000000000000, //721
         52'b0000000000000000010000000000000000101011001011010010, //722
-        52'b0000000000001010000000000001010001100100001011001110 //723
+        52'b0000000000001010000000000001010001100100001011001110, //723
+        52'b1000010000000010000000000001010000100110000000000000, //724
+        52'b0100000000010000000001000001000000100110000000000000, //725
+        52'b0000100000000000000000000000000000101010011011011011, //726
+        52'b0000000000000001001000000001010000100110000000000000, //727
+        52'b0000000000000000010000000000000000000110000000000000, //728
+        52'b0000000000000000010000000000000000001011001011011001, //729
+        52'b0000000000001010000000000001010001100110000000000000, //730
+        52'b0010010000000000000001000001010110100110000000000000, //731
+        52'b0000100000000000000000000000000000001011011011010101, //732
+        52'b0001000000001000000000000000000000000010000000000000 //733
+
        };
 
 always @(next_state, reset)
@@ -1563,6 +1634,7 @@ always @(*) begin
     5'b10011:  Out = A >>1; // right shift
     5'b10100:  Out = A <<1; // left shift
     5'b10101:   Out = A - B + 4;
+    5'b10110: Out = B << 1;
     endcase
     
      Zero = (~|Out); //bitwise or
@@ -1583,6 +1655,13 @@ wire [31:0] I0, I1, I2, I3, I4, I5, I6, I7, I8, I9, I10, I11, I12, I13, I14, I15
 
 always@(I15, rfLd) begin
     $display("__R0: %b, __R1: %b\n__R5: %b, __R15: %b, Clock:%b, t:%0d\n__R1: %b, Clock:%b, t:%0d\n__R2: %b, Clock:%b, t:%0d\n__R3: %b, Clock:%b, t:%0d",I0,I1, I5, I15, clk, $time, I1, clk, $time, I2, clk, $time, I3, clk, $time);
+end
+
+initial begin 
+#1060
+    $display("------- Testing Report: Register File Contents ----------- t:%0d", $time);
+    $display("__R15: %b, Clock:%b, t:%0d\n__R1: %b, Clock:%b, t:%0d\n__R2: %b, Clock:%b, t:%0d\n__R3: %b, Clock:%b, t:%0d", I15, clk, $time, I1, clk, $time, I2, clk, $time, I3, clk, $time);
+    $display("------- Ends Testing Report: Register File Contents ------ t:%0d", $time);
 end
 
 binaryDecoder16bit decoder (BDselect, C, rfLd);
@@ -1741,7 +1820,7 @@ module Multiplexer2x1_5(output reg [4:0] Q, input [4:0] I0, I1, input S);
     
 endmodule
 
-//this one is for MuxF
+//this one is for MuxF, MuxJ
 module Multiplexer2x1_4(output reg [3:0] Q, input [3:0] I0, I1, input S);
     
     always @ (*)
@@ -2092,52 +2171,52 @@ endmodule
 module MultiRegEncoder(output reg [3:0] Out, input [31:0] RegisterBit);
 always @(RegisterBit) begin
 case(RegisterBit)
-    32'h0: begin
+    32'h10000: begin
         Out <= 4'h0;
     end
-    32'h2: begin
+    32'h20000: begin
         Out <= 4'h1;
     end
-    32'h4: begin
+    32'h40000: begin
         Out <= 4'h2;
     end
-    32'h8: begin
+    32'h80000: begin
         Out <= 4'h3;
     end
-    32'h10: begin
+    32'h100000: begin
         Out <= 4'h4;
     end
-    32'h20: begin
+    32'h200000: begin
         Out <= 4'h5;
     end
-    32'h40: begin
+    32'h400000: begin
         Out <= 4'h6;
     end
-    32'h80: begin
+    32'h800000: begin
         Out <= 4'h7;
     end
-    32'h100: begin
+    32'h1000000: begin
         Out <= 4'h8;
     end
-    32'h200: begin
+    32'h2000000: begin
         Out <= 4'h9;
     end
-    32'h400: begin
+    32'h4000000: begin
         Out <= 4'hA;
     end
-    32'h800: begin
+    32'h8000000: begin
         Out <= 4'hB;
     end
-    32'h1000: begin
+    32'h10000000: begin
         Out <= 4'hC;
     end
-    32'h2000: begin
+    32'h20000000: begin
         Out <= 4'hD;
     end
-    32'h4000: begin
+    32'h40000000: begin
         Out <= 4'hE;
     end
-    32'h8000: begin
+    32'h80000000: begin
         Out <= 4'hF;
     end
 endcase
