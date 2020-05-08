@@ -7,8 +7,8 @@ module LetsGo;
 // E2 8F 20 03 - 32'b<bits for instruction>; //estado 7 - ADD R2, R15, #d3 //temp --> R2 = 11         // it works 
 // E7 C6 40 04 - 32'b1110_011_11100_0110_0100_000000000100;// estado 16 STRB register offset ADD
 // EA C6 40 E4 - 32'b1110_101_01100_0110_0100_000011100100; // estado 64 Branch instruction
-//
-//  testing: 11 --> 2
+// E8 A1 00 0C - STMIA R1!, {R2, R3} //state 715?
+//  testing: store r2 in 13 and r3 in 14, r1 ends with 21
 //////////
 // 32'b1110_001_0100_0_1111_0001_0000_00001001 //instruccion estado 7 ADD R1, R15, #0d9 E2801009
 //32'b1110_001_0100_0_1111_0010_0000_00000011 // instruction estado 7 ADD R2, R15, #d3  E2802003
@@ -160,13 +160,14 @@ initial begin //BEGIN PRINT
 #50 //delay to wait for precharge things
 $display("\n~~~~~~~~Initiating ALURFCU simulation~~~~~~~~\n");
 // $monitor("%h    %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b",IR,aluOut,OP,current_state,FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MD, ME, MA, MB, MC,Clk,reset, $time); 
-    $monitor("IR:%x, Dout:%x, alu:%x, sizeOP:%b, State:%0d, RFld:%b, MA:%b, MB:%b, MC:%b, MD:%b, ME:%b, OP:%b, IRld:%b, MARld:%b, MDRld:%b, RW:%b, MOV:%b, MOC:%b, Cond:%b, Clk:%b, rst:%b, t:%0d", IRBus, DataOut, aluOut, sizeOP, current_state, RFld, MA, MB, MC, MD, ME, OP4OP0, IRld, MARld, MDRld, R_W, MOV, MOC, Cond, Clk, reset, $time);
+    // $monitor("IR:%x, Dout:%x, alu:%x, sizeOP:%b, State:%0d, RFld:%b, MA:%b, MB:%b, MC:%b, MD:%b, ME:%b, OP:%b, IRld:%b, MARld:%b, MDRld:%b, RW:%b, MOV:%b, MOC:%b, Cond:%b, Clk:%b, rst:%b, t:%0d", IRBus, DataOut, aluOut, sizeOP, current_state, RFld, MA, MB, MC, MD, ME, OP4OP0, IRld, MARld, MDRld, R_W, MOV, MOC, Cond, Clk, reset, $time);
+    $monitor("IR:%x, Dout:%x, alu:%x, sOP:%b, State:%0d, RFld:%b, MA:%b, MB:%b, MC:%b, MD:%b, ME:%b, MJ:%b, OP:%b, MARld:%b, MDRld:%b, RW:%b, MOV:%b, MOC:%b, Cond:%b, Clk:%b, t:%0d", IRBus, DataOut, aluOut, sizeOP, current_state, RFld, MA, MB, MC, MD, ME, MJ, OP4OP0, MARld, MDRld, R_W, MOV, MOC, Cond, Clk, $time);
 end
 
 initial begin //initial test instructions
 #551
     Adr = 7'b0000000; //Address of instruction being tested 
-    EfAdr = 13 - 11;
+    EfAdr = 13;
     $display("----- Memory contents after running: %h ----- time:%0d",{RAM.Mem[Adr], RAM.Mem[Adr+1], RAM.Mem[Adr+2], RAM.Mem[Adr+3]}, $time);                       
 
     repeat (4) begin //each address is a byte, so this tells amount of bytes to show 
@@ -1434,6 +1435,13 @@ always@(I15, rfLd) begin
     $display("__R15: %b, Clock:%b, t:%0d\n__R1: %b, Clock:%b, t:%0d\n__R2: %b, Clock:%b, t:%0d\n__R3: %b, Clock:%b, t:%0d", I15, clk, $time, I1, clk, $time, I2, clk, $time, I3, clk, $time);
 end
 
+initial begin 
+#570
+    $display("------- Testing Report: Register File Contents ----------- t:%0d", $time);
+    $display("__R15: %b, Clock:%b, t:%0d\n__R1: %b, Clock:%b, t:%0d\n__R2: %b, Clock:%b, t:%0d\n__R3: %b, Clock:%b, t:%0d", I15, clk, $time, I1, clk, $time, I2, clk, $time, I3, clk, $time);
+    $display("------- Ends Testing Report: Register File Contents ------ t:%0d", $time);
+end
+
 binaryDecoder16bit decoder (BDselect, C, rfLd);
 
 register32bit r0 (I0, PC, clk, BDselect[0]);
@@ -1590,7 +1598,7 @@ module Multiplexer2x1_5(output reg [4:0] Q, input [4:0] I0, I1, input S);
     
 endmodule
 
-//this one is for MuxF
+//this one is for MuxF, MuxJ
 module Multiplexer2x1_4(output reg [3:0] Q, input [3:0] I0, I1, input S);
     
     always @ (*)
