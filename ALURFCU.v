@@ -1257,7 +1257,7 @@ always @(posedge Clk) begin
 end
 endmodule
 
-module FlagRegister(output reg [3:0] Q, input [3:0] D, input LE, Clk);
+module FlagRegister(output reg [3:0] Q, input [3:0] D, input LE, Clk); //add Cin here
 always @(posedge Clk) begin
     if(LE) begin 
         Q <= D;
