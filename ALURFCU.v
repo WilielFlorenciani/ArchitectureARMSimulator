@@ -626,7 +626,7 @@ endmodule
 
 module Microstore (output reg [51:0] out, output reg [9:0] current_state, input reset, input [9:0] next_state);
     //n2n1n0 inv s1s0 moore cr(6)
-        parameter[0:52 * <final # of states> - 1] CR_states = { // is the 50 thing correct? - cambiar aqui 345 por el numero de estados que hay 
+        parameter[0:52 * <final # of states> - 1] CR_states = { //  cambiar aqui 345 por el numero de estados que hay 
         39'b001000000011101001101000110000000000000, //0
         39'b000010001000001010000000110000000000000, //1
         39'b001000111000101010001100110000000000000, //2
