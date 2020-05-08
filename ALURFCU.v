@@ -8,8 +8,10 @@ module LetsGo;
 // E7 C6 40 04 - 32'b1110_011_11100_0110_0100_000000000100;// estado 16 STRB register offset ADD
 // EA C6 40 E4 - 32'b1110_101_01100_0110_0100_000011100100; // estado 64 Branch instruction
 // E8 A1 00 0C - STMIA R1!, {R2, R3} //state 715?
+// E8 81 00 0C - STMIA R1, {R2, R3} //state 724
 // E2 82 30 04 -> state 7, add r3, r2, #4 --> R3 = 15
-//  testing: store r2 in 13 and r3 in 17, r1 ends with 21
+//  testing: store r2=11 in 13 and r3=15 in 17, r1 ends with 21
+//  whats happening: 13 in 16, 17 in 20
 //////////
 // 32'b1110_001_0100_0_1111_0001_0000_00001001 //instruccion estado 7 ADD R1, R15, #0d9 E2801009
 //32'b1110_001_0100_0_1111_0010_0000_00000011 // instruction estado 7 ADD R2, R15, #d3  E2802003
@@ -167,12 +169,12 @@ end
 
 initial begin //initial test instructions
 // #551
-#1000
+#1055
     Adr = 7'b0000000; //Address of instruction being tested 
     EfAdr = 13;
     $display("----- Memory contents after running: %h ----- time:%0d",{RAM.Mem[Adr], RAM.Mem[Adr+1], RAM.Mem[Adr+2], RAM.Mem[Adr+3]}, $time);                       
 
-    repeat (12) begin //each address is a byte, so this tells amount of bytes to show 
+    repeat (16) begin //each address is a byte, so this tells amount of bytes to show 
         #1;
         $display("__RAM_After_Testing: data in address %0d = %x, time: %0d", EfAdr, RAM.Mem[EfAdr], $time);
         #1;
@@ -765,7 +767,7 @@ case(Instruction[27:25])
                         2'b01:  if(Instruction[21]==1'b1) //Bit W-permite update a Rn
                                     Out = 10'b1011001011; //estado de permititr update Rn
                                 else
-                                    Out = 10'b0; //estado de no update a Rn
+                                    Out = 10'b1011010100; //estado de no update a Rn
                         //Increment before            
                         2'b11:  if(Instruction[21]==1'b1)
                                     Out = 10'b0; //estado de update Rn
@@ -820,7 +822,7 @@ endmodule
 
 module Microstore (output reg [51:0] out, output reg [9:0] current_state, input reset, input [9:0] next_state);
     //n2n1n0 inv s1s0 moore cr(6)
-        parameter[0:52 * 724 - 1] CR_states = { //  cambiar aqui 724 por el numero total de estados que hay 
+        parameter[0:52 * 734 - 1] CR_states = { //  cambiar aqui 724 por el numero total de estados que hay 
         52'b0000000000001000000000110101001101000110000000000000, //0
         52'b0000000000000010000100000001010000000110000000000000, //1
         52'b0000000000001000110100000101010001100110000000000000, //2
@@ -1544,7 +1546,18 @@ module Microstore (output reg [51:0] out, output reg [9:0] current_state, input 
         52'b0000000000000001001000000001110000100110000000000000, //720
         52'b0000000000000000010000000000000000100110000000000000, //721
         52'b0000000000000000010000000000000000101011001011010010, //722
-        52'b0000000000001010000000000001010001100100001011001110 //723
+        52'b0000000000001010000000000001010001100100001011001110, //723
+        52'b1000010000000010000000000001010000100110000000000000, //724
+        52'b0100000000010000000001000001000000100110000000000000, //725
+        52'b0000100000000000000000000000000000101010011011011011, //726
+        52'b0000000000000001001000000001010000100110000000000000, //727
+        52'b0000000000000000010000000000000000000110000000000000, //728
+        52'b0000000000000000010000000000000000001011001011011001, //729
+        52'b0000000000001010000000000001010001100110000000000000, //730
+        52'b0010010000000000000001000001010110100110000000000000, //731
+        52'b0000100000000000000000000000000000001011011011010101, //732
+        52'b0001000000001000000000000000000000000010000000000000 //733
+
        };
 
 always @(next_state, reset)
@@ -1629,7 +1642,7 @@ always@(I15, rfLd) begin
 end
 
 initial begin 
-#1000
+#1060
     $display("------- Testing Report: Register File Contents ----------- t:%0d", $time);
     $display("__R15: %b, Clock:%b, t:%0d\n__R1: %b, Clock:%b, t:%0d\n__R2: %b, Clock:%b, t:%0d\n__R3: %b, Clock:%b, t:%0d", I15, clk, $time, I1, clk, $time, I2, clk, $time, I3, clk, $time);
     $display("------- Ends Testing Report: Register File Contents ------ t:%0d", $time);
