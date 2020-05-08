@@ -5,10 +5,11 @@ module LetsGo;
 // E08120E2 - 32'b1110_000_0100_0_0110_0100_00001110_0100; //estado 5 - ADD R2,R1,R2,ROR #1 -> 001011 --> ROR #1: 000101; 5 + 13 = 18 --> 10010 in r2 
 // E2 8F 10 09 - 32'b<bits for instruction>; //estado 7 - ADD R1, R15, #0d9 //temp --> R1 = 13        // it works 
 // E2 8F 20 03 - 32'b<bits for instruction>; //estado 7 - ADD R2, R15, #d3 //temp --> R2 = 11         // it works 
+// E2 81 30 02 - /////////////////////////// //estado 7 - ADD R3, R1, #2 --> R3 = 15
 // E7 C6 40 04 - 32'b1110_011_11100_0110_0100_000000000100;// estado 16 STRB register offset ADD
 // EA C6 40 E4 - 32'b1110_101_01100_0110_0100_000011100100; // estado 64 Branch instruction
-//
-//  testing: 11 --> 24
+//  E5 81 20 07 --> 507, STRD r2, [r1, #7]
+//  testing: (r2)11 --> 23, (r3)15 --> 27
 //////////
 // 32'b1110_001_0100_0_1111_0001_0000_00001001 //instruccion estado 7 ADD R1, R15, #0d9 E2801009
 //32'b1110_001_0100_0_1111_0010_0000_00000011 // instruction estado 7 ADD R2, R15, #d3  E2802003
@@ -121,7 +122,7 @@ end
 initial begin
 #50 //so that clock starts when precharge tasks are done 
   Clk <= 1'b0;
-  repeat(40) #5 Clk = ~Clk;
+  repeat(60) #5 Clk = ~Clk;
 end
 
 initial begin
@@ -146,10 +147,10 @@ end
 initial begin //initial test instructions
 #551
     Adr = 7'b0000000; //Address of instruction being tested 
-    EfAdr = 13 - 11;
+    EfAdr = 13 + 7;
     $display("----- Memory contents after running: %h ----- time:%0d",{RAM.Mem[Adr], RAM.Mem[Adr+1], RAM.Mem[Adr+2], RAM.Mem[Adr+3]}, $time);                       
 
-    repeat (4) begin //each address is a byte, so this tells amount of bytes to show 
+    repeat (8) begin //each address is a byte, so this tells amount of bytes to show 
         #1;
         $display("__RAM_After_Testing: data in address %0d = %x, time: %0d", EfAdr, RAM.Mem[EfAdr], $time);
         #1;
@@ -791,7 +792,7 @@ endmodule
 
 module Microstore (output reg [38:0] out, output reg [9:0] current_state, input reset, input [9:0] next_state);
     //n2n1n0 inv s1s0 moore cr(6)
-        parameter[0:39 * 345 - 1] CR_states = { //cambiar aqui 345 por el numero de estados que hay 
+        parameter[0:39 * 539 - 1] CR_states = { //cambiar aqui 345 por el numero de estados que hay 
         39'b001000000011101001101000110000000000000, //0
         39'b000010001000001010000000110000000000000, //1
         39'b001000111000101010001100110000000000000, //2
