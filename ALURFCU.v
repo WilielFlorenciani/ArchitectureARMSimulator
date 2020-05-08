@@ -83,7 +83,7 @@ ram512x8 RAM(DataOut, MOC, MOV, R_W, Address, mdrOut, sizeOP);
 ConditionTester condition_tester(Cond, FROut[3], FROut[2], FROut[1], FROut[0], muxJOut); //use this one cuando vayas a usar FR
 // ConditionTester condition_tester(Cond, ALU_flags[3], ALU_flags[2], ALU_flags[1], ALU_flags[0], IRBus[31:28]); 
 shift_sign_extender SASExtender(saseOut, ALU_flags[3], IRBus, PB, FROut[3]);
-Adder_4 adder4(adder4Out, IR[15:12]);
+Adder_4 adder4(adder4Out, IRBus[15:12]);
 MultiRegEncoder multireg_encoder(multiencOut, multiregOut);
 
 Multiplexer8x3_4 MuxA(A, IRBus[19:16], IRBus[15:12], number15, adder4Out, multiencOut, MA);
@@ -123,6 +123,20 @@ initial begin //initial to precharge memory with the file
     $fclose(fi);
     $display("----- Finished Precharge ----- time:%0d", $time);
 end
+initial begin //initial to precharge memory with the file
+    $display("----- Initiating Precharge2 -----");
+    fi = $fopen("seba_ram_data.txt","r");
+    // Adr = 9'b000000000;
+    Adr = 40;
+    // OpCode = 2'b10;
+    while (!$feof(fi)) begin
+        code = $fscanf(fi, "%x", data);
+        RAM.Mem[Adr] = data;
+        Adr = Adr + 1;
+    end
+    $fclose(fi);
+    $display("----- Finished Precharge ----- time:%0d", $time);
+end
 
 initial begin //initial to read content of memory after precharging
 #1
@@ -141,7 +155,7 @@ end
 initial begin
 #50 //so that clock starts when precharge tasks are done 
   Clk <= 1'b0;
-  repeat(40) #5 Clk = ~Clk;
+  repeat(125) #5 Clk = ~Clk;
 end
 
 initial begin
@@ -323,11 +337,84 @@ module Encoder(output reg [9:0] Out, input [31:0] Instruction);
 always @(Instruction) begin
 case(Instruction[27:25])
     3'b001: begin
-            case(Instruction[24:21])
-            //case de opcode de la instruccion
-            4'b0100: Out = 10'b0000000111;
-            endcase
-            end
+            if(Instruction[20]==1'b0)
+                begin
+                    case(Instruction[24:21])
+                    //case de opcode de la instruccion
+                    //AND
+                    4'b0000:    Out = 10'b0111110100;
+                    //EOR
+                    4'b0001:    Out = 10'b0111111000;
+                    //SUB
+                    4'b0010:    Out = 10'b0111101001;
+                    //RSB
+                    4'b0011:    Out = 10'b0111101100;
+                    //ADD
+                    4'b0100:    Out = 10'b0000000111;
+                    //ADC
+                    4'b0101:    Out = 10'b0111101110;
+                    //SBC
+                    4'b0110:    Out = 10'b0111110000;
+                    //RSC
+                    4'b0111:    Out = 10'b0111110010;
+                    //TST
+                    4'b1000:    Out = 10'b0111100111;
+                    //TEQ
+                    4'b1001:    Out = 10'b0111101000;
+                    //CMP
+                    4'b1010:    Out = 10'b0111100101;
+                    //CMN
+                    4'b1011:    Out = 10'b0111100110;
+                    //ORR
+                    4'b1100:    Out = 10'b0111111010;
+                    //MOV
+                    4'b1101:    Out = 10'b0111100010;
+                    //BIC
+                    4'b1110:    Out = 10'b0111110110;
+                    //MVN
+                    4'b1111:    Out = 10'b0111100100;
+                    endcase
+                end    
+            
+            else
+                begin
+                     case(Instruction[24:21])
+                    //case de opcode de la instruccion
+                    //ANDS
+                    4'b0000:    Out = 10'b0111110011;
+                    //EORS
+                    4'b0001:    Out = 10'b0111110111;
+                    //SUBS
+                    4'b0010:    Out = 10'b0111101010;
+                    //RSBS
+                    4'b0011:    Out = 10'b0111101011;
+                    //ADDS
+                    4'b0100:    Out = 10'b0000000101;
+                    //ADCS
+                    4'b0101:    Out = 10'b0111101101;
+                    //SBCS
+                    4'b0110:    Out = 10'b0111101111;
+                    //RSCS
+                    4'b0111:    Out = 10'b0111110001;
+                    //TST
+                    4'b1000:    Out = 10'b0111100111;
+                    //TEQ
+                    4'b1001:    Out = 10'b0111101000;
+                    //CMP
+                    4'b1010:    Out = 10'b0111100101;
+                    //CMN
+                    4'b1011:    Out = 10'b0111100110;
+                    //ORRS
+                    4'b1100:    Out = 10'b0111111001;
+                    //MOVS
+                    4'b1101:    Out = 10'b0111100001;
+                    //BICS
+                    4'b1110:    Out = 10'b0111110101;
+                    //MVNS
+                    4'b1111:    Out = 10'b0111100011;
+                    endcase
+                end
+            end    
     3'b000: begin
             if(Instruction[24]==1'b1 && Instruction[7]==1'b1 && Instruction[4]==1'b1)
                 begin
@@ -479,22 +566,86 @@ case(Instruction[27:25])
                             endcase 
                         end
                 end
-            //case de opcode de la instruccion
-            case(Instruction[24:21])
-                4'b0100: begin 
-                        if(Instruction[4] == 1'b0)
-                                begin
-                                case(Instruction[6:5]) 
-                                    // logical shift left
-                                2'b00:  Out = 10'b0000000101;
-                                endcase
-                                end
-                        else if(Instruction[11:5]== 7'b0000000)
-                             Out = 10'b0000000110;
+                else if(Instruction[4]==1'b0)
+                    if(Instruction[20]==1'b0)
+                        begin
+                            case(Instruction[24:21])
+                            //case de opcode de la instruccion
+                            //AND
+                            4'b0000:    Out = 10'b0111110100;
+                            //EOR
+                            4'b0001:    Out = 10'b0111111000;
+                            //SUB
+                            4'b0010:    Out = 10'b0111101001;
+                            //RSB
+                            4'b0011:    Out = 10'b0111101100;
+                            //ADD
+                            4'b0100:    Out = 10'b0000000111;
+                            //ADC
+                            4'b0101:    Out = 10'b0111101110;
+                            //SBC
+                            4'b0110:    Out = 10'b0111110000;
+                            //RSC
+                            4'b0111:    Out = 10'b0111110010;
+                            //TST
+                            4'b1000:    Out = 10'b0111100111;
+                            //TEQ
+                            4'b1001:    Out = 10'b0111101000;
+                            //CMP
+                            4'b1010:    Out = 10'b0111100101;
+                            //CMN
+                            4'b1011:    Out = 10'b0111100110;
+                            //ORR
+                            4'b1100:    Out = 10'b0111111010;
+                            //MOV
+                            4'b1101:    Out = 10'b0111100010;
+                            //BIC
+                            4'b1110:    Out = 10'b0111110110;
+                            //MVN
+                            4'b1111:    Out = 10'b0111100100;
+                            endcase
                         end
-            endcase
-            
+                    else
+                        begin
+                            case(Instruction[24:21])
+                         
+                            //ANDS
+                            4'b0000:    Out = 10'b0111110011;
+                            //EORS
+                            4'b0001:    Out = 10'b0111110111;
+                            //SUBS
+                            4'b0010:    Out = 10'b0111101010;
+                            //RSBS
+                            4'b0011:    Out = 10'b0111101011;
+                            //ADDS
+                            4'b0100:    Out = 10'b0000000101;
+                            //ADCS
+                            4'b0101:    Out = 10'b0111101101;
+                            //SBCS
+                            4'b0110:    Out = 10'b0111101111;
+                            //RSCS
+                            4'b0111:    Out = 10'b0111110001;
+                            //TST
+                            4'b1000:    Out = 10'b0111100111;
+                            //TEQ
+                            4'b1001:    Out = 10'b0111101000;
+                            //CMP
+                            4'b1010:    Out = 10'b0111100101;
+                            //CMN
+                            4'b1011:    Out = 10'b0111100110;
+                            //ORRS
+                            4'b1100:    Out = 10'b0111111001;
+                            //MOVS
+                            4'b1101:    Out = 10'b0111100001;
+                            //BICS
+                            4'b1110:    Out = 10'b0111110101;
+                            //MVNS
+                            4'b1111:    Out = 10'b0111100011;
+                            endcase
+                        end
             end
+            
+        
     3'b010: begin
             case(Instruction[24:20])
                 //strb immed
@@ -1431,7 +1582,7 @@ wire [15:0] BDselect;
 wire [31:0] I0, I1, I2, I3, I4, I5, I6, I7, I8, I9, I10, I11, I12, I13, I14, I15;
 
 always@(I15, rfLd) begin
-    $display("__R15: %b, Clock:%b, t:%0d\n__R1: %b, Clock:%b, t:%0d\n__R2: %b, Clock:%b, t:%0d\n__R3: %b, Clock:%b, t:%0d", I15, clk, $time, I1, clk, $time, I2, clk, $time, I3, clk, $time);
+    $display("__R0: %b, __R1: %b\n__R5: %b, __R15: %b, Clock:%b, t:%0d\n__R1: %b, Clock:%b, t:%0d\n__R2: %b, Clock:%b, t:%0d\n__R3: %b, Clock:%b, t:%0d",I0,I1, I5, I15, clk, $time, I1, clk, $time, I2, clk, $time, I3, clk, $time);
 end
 
 binaryDecoder16bit decoder (BDselect, C, rfLd);
