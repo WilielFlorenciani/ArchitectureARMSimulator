@@ -22,9 +22,9 @@ parameter noValue_1 = 1'b0;
 parameter noValue_32 = 32'b0;
 
 //wires de Control Unit
-wire MultiRegld, MJ, MI, MH, MG, MF, FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MD, ME;
-wire [2:0] MA, MC;
-wire [1:0] MB, sizeOP;
+wire MK, MultiRegld, MJ, MI, MG, MF, FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MD, ME;
+wire [2:0] MA, MB, MC;
+wire [1:0] sizeOP;
 wire [4:0] OP4OP0;
 wire [9:0] current_state;
 wire [31:0] IRBus;
@@ -65,9 +65,13 @@ wire [3:0] multiencOut;
 //multireg wires
 wire [31:0] multiregOut;
 
-//MDR, MuxE, MuxF, MuxG, MuxH, MuxI, MuxJ
-wire [31:0] mdrOut, muxEOut, muxGOut, muxHOut, muxIOut;
+//MDR, MuxE, MuxF, MuxG, MuxH, MuxI, MuxJ, MuxK
+wire [31:0] mdrOut, muxEOut, muxGOut, muxIOut, muxKOut;
 wire [3:0] muxFOut, muxJOut;
+
+//BaseRegister wires 
+wire [31:0] baseregOut;
+wire BaseRegld;
 
 integer fi, code, i; reg [7:0] data; reg [31:0] Adr, EfAdr; //variables to handle file info
 
@@ -78,26 +82,28 @@ alu_32 ALU(aluOut, ALU_flags[3], ALU_flags[2], ALU_flags[1], ALU_flags[0], muxGO
 ram512x8 RAM(DataOut, MOC, MOV, R_W, Address, mdrOut, sizeOP);
 ConditionTester condition_tester(Cond, FROut[3], FROut[2], FROut[1], FROut[0], muxJOut); //use this one cuando vayas a usar FR
 // ConditionTester condition_tester(Cond, ALU_flags[3], ALU_flags[2], ALU_flags[1], ALU_flags[0], IRBus[31:28]); 
-shift_sign_extender SASExtender(saseOut, ALU_flags[3], muxHOut, PB, FROut[3]);
+shift_sign_extender SASExtender(saseOut, ALU_flags[3], IRBus, PB, FROut[3]);
 Adder_4 adder4(adder4Out, IR[15:12]);
 MultiRegEncoder multireg_encoder(multiencOut, multiregOut);
 
 Multiplexer8x3_4 MuxA(A, IRBus[19:16], IRBus[15:12], number15, adder4Out, multiencOut, MA);
-Multiplexer4x2_32 MuxB(AluB, PB, saseOut, mdrOut, noValue_32, MB);
-Multiplexer8x3_4 MuxC(C, IRBus[19:16], IRBus[15:12], number15, noValue_4, multiencOut, MC);
+Multiplexer8x3_32 MuxB(AluB, PB, saseOut, mdrOut, noValue_32, multiregOut, MB); 
+Multiplexer8x3_4 MuxC(C, IRBus[19:16], IRBus[15:12], number15, adder4Out, multiencOut, MC);
 Multiplexer2x1_5 MuxD(OP,{1'b0, IRBus[24:21]}, OP4OP0, MD);
 Multiplexer2x1_32 MuxE(muxEOut, DataOut, aluOut, ME);
 Multiplexer2x1_4 MuxF(muxFOut, IRBus[3:0],IRBus[19:16], MF);
 Multiplexer2x1_32 MuxG(muxGOut, PA, {IRBus[15:0], 16'b0}, MG); //feeds alu input A
-Multiplexer2x1_32 MuxH(muxHOut, IRBus, multiregOut, MH); //feeds sase
+// Multiplexer2x1_32 MuxH(muxHOut, IRBus, multiregOut, MH); //feeds sase
 Multiplexer2x1_32 MuxI(muxIOut, 32'h10000, aluOut, MI); //feeds multireg
 Multiplexer2x1_4 MuxJ(muxJOut, IRBus[31:28], CondTestOp, MJ); //feeds condition tester 
+Multiplexer2x1_32 MuxK(muxKOut, baseregOut, aluOut, MK); //feeds PC
 
 MAR Mar(Address, aluOut, MARld, Clk);
 MDR Mdr(mdrOut, muxEOut, MDRld, Clk);
 FlagRegister FR(FROut, ALU_flags, FRld, Clk); 
 InstructionRegister IR(IRBus, DataOut, IRld, Clk);
 MultiRegister multireg(multiregOut, muxIOut, MultiRegld, Clk); 
+BaseRegister basereg(baseregOut, aluOut, BaseRegld, Clk);
 /////// END
 
 /////// BEGIN INITIALS
@@ -176,7 +182,7 @@ end
 endmodule
 
 /////////////// BEGIN CONTROL UNIT
-module ControlUnit(output reg [3:0] CondTestOp, output reg MultiRegld, FRld, RFld, IRld, MARld, MDRld, R_W , MOV, output reg [2:0] MA, MC, output reg [1:0] MB, sizeOP, output reg MD, ME, MF, MG, MH, MI, MJ, output reg [4:0] OP4OP0, output reg [9:0] current_state, input [31:0] IR, input Cond, MOC, reset, clk);
+module ControlUnit(output reg [3:0] CondTestOp, output reg BaseRegld, MultiRegld, FRld, RFld, IRld, MARld, MDRld, R_W , MOV, output reg [2:0] MA, MC, MB, output reg [1:0] sizeOP, output reg MD, ME, MF, MG, MI, MJ, MK, output reg [4:0] OP4OP0, output reg [9:0] current_state, input [31:0] IR, input Cond, MOC, reset, clk);
 
 wire [9:0] mux7Out;
 wire mux1Out;
@@ -193,23 +199,24 @@ wire [9:0] new_state, curr_state;
 
 always @ (*) begin
     // Cin <= CRout[?];
-    MG <= CRout[49];
-    MI <= CRout[48];
-    MH <= CRout[47];
-    MJ <= CRout[46];
-    MultiRegld <= CRout[45];
-    CondTestOp <= CRout[44:41];
-    MF <= CRout[40];
-    FRld <= CRout[39];
-    RFld <= CRout[38];
-    IRld <= CRout[37];
-    MARld <= CRout[36];
-    MDRld <= CRout[35];
-    R_W <= CRout[34];
-    MOV <= CRout[33];
-    MA <= CRout[32:30];
-    MB <= CRout[29:28];
-    MC <= CRout[27:25];//
+    BaseRegld <= CRout[51];
+    MG <= CRout[50];
+    MI <= CRout[49];
+    MK <= CRout[48];
+    MJ <= CRout[47];
+    MultiRegld <= CRout[46];
+    CondTestOp <= CRout[45:42];
+    MF <= CRout[41];
+    FRld <= CRout[40];
+    RFld <= CRout[39];
+    IRld <= CRout[38];
+    MARld <= CRout[37];
+    MDRld <= CRout[36];
+    R_W <= CRout[35];
+    MOV <= CRout[34];
+    MA <= CRout[33:31];
+    MB <= CRout[30:28];//
+    MC <= CRout[27:25];
     MD <= CRout[24];
     ME <= CRout[23];
     OP4OP0 <= CRout[22:18];
@@ -617,9 +624,9 @@ endcase
 end
 endmodule
 
-module Microstore (output reg [49:0] out, output reg [9:0] current_state, input reset, input [9:0] next_state);
+module Microstore (output reg [51:0] out, output reg [9:0] current_state, input reset, input [9:0] next_state);
     //n2n1n0 inv s1s0 moore cr(6)
-        parameter[0:50 * <final # of states> - 1] CR_states = { // is the 50 thing correct? - cambiar aqui 345 por el numero de estados que hay 
+        parameter[0:52 * <final # of states> - 1] CR_states = { // is the 50 thing correct? - cambiar aqui 345 por el numero de estados que hay 
         39'b001000000011101001101000110000000000000, //0
         39'b000010001000001010000000110000000000000, //1
         39'b001000111000101010001100110000000000000, //2
@@ -1143,7 +1150,23 @@ endmodule
 
 ///////////////// BEGIN MUXES
 //this one's used for MuxB --v
-module Multiplexer4x2_32(output reg [31:0] Q, input [31:0] I0, I1, I2, I3, input [1:0] S);
+// module Multiplexer4x2_32(output reg [31:0] Q, input [31:0] I0, I1, I2, I3, input [1:0] S);
+    
+//     always @ (*)
+//     begin
+//         case(S)
+//             4'h0: Q <= I0;
+//             4'h1: Q <= I1;
+//             4'h2: Q <= I2;
+//             4'h3: Q <= I3;
+//         endcase
+//         end
+    
+// endmodule 
+
+//this one's used for MuxA and MuxC
+// module Multiplexer8x3_4(output reg [3:0] Q, input [3:0] I0, I1, I2, I3, I4, I5, I6, I7, input [1:0] S);
+module Multiplexer8x3_4(output reg [3:0] Q, input [3:0] I0, I1, I2, I3, I4, input [1:0] S); //using this one hasta que tengamos que usar las otras entradas
     
     always @ (*)
     begin
@@ -1152,14 +1175,15 @@ module Multiplexer4x2_32(output reg [31:0] Q, input [31:0] I0, I1, I2, I3, input
             4'h1: Q <= I1;
             4'h2: Q <= I2;
             4'h3: Q <= I3;
+            4'h4: Q <= I4;
         endcase
         end
     
-endmodule 
+endmodule
 
-//this one's used for MuxA and MuxC
-// module Multiplexer8x3_4(output reg [3:0] Q, input [3:0] I0, I1, I2, I3, I4, I5, I6, I7, input [1:0] S);
-module Multiplexer8x3_4(output reg [3:0] Q, input [3:0] I0, I1, I2, I3, I4, input [1:0] S); //using this one hasta que tengamos que usar las otras entradas
+//this one's used for MuxB
+// module Multiplexer8x3_32(output reg [31:0] Q, input [31:0] I0, I1, I2, I3, I4, I5, I6, I7, input [1:0] S);
+module Multiplexer8x3_32(output reg [31:0] Q, input [31:0] I0, I1, I2, I3, I4, input [1:0] S); //using this one hasta que tengamos que usar las otras entradas
     
     always @ (*)
     begin
@@ -1253,6 +1277,15 @@ always @(posedge Clk) begin
         Q <= D;
     end
     $display("__MultiRegister: multiregOut:%b, t:%0d", Q, $time);
+end
+endmodule
+
+module BaseRegister(output reg [31:0] Q, input [31:0] D, input LE, Clk);
+always @(posedge Clk) begin
+    if(LE) begin 
+        Q <= D;
+    end
+    $display("__BaseRegister: baseregOut:%b, t:%0d", Q, $time);
 end
 endmodule
 ///////////////// END REGISTERS
