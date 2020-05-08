@@ -771,7 +771,10 @@ case(Instruction[27:25])
                 end
             end
 
-    3'b101: Out = 10'b0001000000; //branch instruction
+    3'b101: if(Instruction[24]==1'b0) 
+                Out = 10'b0001000000; //branch 
+            else
+                Out = 10'b1101011011; // branch&link
     
     //load/store multiple
     3'b100: 
