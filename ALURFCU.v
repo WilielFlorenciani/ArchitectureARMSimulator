@@ -16,6 +16,8 @@ module LetsGo;
 // 32'b1110_001_0100_0_1111_0001_0000_00001001 //instruccion estado 7 ADD R1, R15, #0d9 E2801009
 //32'b1110_001_0100_0_1111_0010_0000_00000011 // instruction estado 7 ADD R2, R15, #d3  E2802003
 
+//comment
+
 /////// BEGIN VARIABLES AND OBJECTS
 reg Clk, reset;
 
