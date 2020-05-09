@@ -3,15 +3,17 @@ module LetsGo;
 ////////// Instructions 
 // E5 C1 20 E4 - 32'b1110_010_11100_0001_0010_000011100100; //estado 8 STRB R2,[R1,#228] --> 11 in 241 // it works 
 // E08120E2 - 32'b1110_000_0100_0_0110_0100_00001110_0100; //estado 5 - ADD R2,R1,R2,ROR #1 -> 001011 --> ROR #1: 000101; 5 + 13 = 18 --> 10010 in r2 
-// E2 8F 10 09 - 32'b<bits for instruction>; //estado 7 - ADD R1, R15, #0d9 //temp --> R1 = 13        // it works 
+// E2 8F 10 09 - 32'b<bits for instruction>; //estado 7 - ADD R1, R15, #d9 //temp --> R1 = 13        // it works 
+// E2 8F 10 60 - //estado 7 - add r1, r15, #96 // --> r1=100
 // E2 8F 20 03 - 32'b<bits for instruction>; //estado 7 - ADD R2, R15, #d3 //temp --> R2 = 11         // it works 
 // E7 C6 40 04 - 32'b1110_011_11100_0110_0100_000000000100;// estado 16 STRB register offset ADD
 // EA C6 40 E4 - 32'b1110_101_01100_0110_0100_000011100100; // estado 64 Branch instruction
 // E8 A1 00 0C - STMIA R1!, {R2, R3} //state 715?
 // E8 81 00 0C - STMIA R1, {R2, R3} //state 724
 // E2 82 30 04 -> state 7, add r3, r2, #4 --> R3 = 15
-//  testing: store r2=11 in 13 and r3=15 in 17, r1 ends with 21
-//  whats happening: 13 in 16, 15 in 20
+// E8 21 00 0C-> stmda r1!, {r2, r3} -> state 754, EffAdr inicial es 100 - (4x2) + 4 = 96
+//  testing: store r2=11 in (96)99 and r3=15 in (100)103, r1 ends with 21
+//  whats happening: 
 //////////
 // 32'b1110_001_0100_0_1111_0001_0000_00001001 //instruccion estado 7 ADD R1, R15, #0d9 E2801009
 //32'b1110_001_0100_0_1111_0010_0000_00000011 // instruction estado 7 ADD R2, R15, #d3  E2802003
@@ -185,8 +187,8 @@ initial begin //initial test instructions
 // #551
 #1055
     Adr = 7'b0000000; //Address of instruction being tested 
-    EfAdr = 13;
-    $display("----- Memory contents after running: %h ----- time:%0d",{RAM.Mem[Adr], RAM.Mem[Adr+1], RAM.Mem[Adr+2], RAM.Mem[Adr+3]}, $time);                       
+    EfAdr = 96;
+    $display("----- Memory contents after running: %h ----- time:%0d",{RAM.Mem[Adr+12], RAM.Mem[Adr+13], RAM.Mem[Adr+14], RAM.Mem[Adr+15]}, $time);                       
 
     repeat (16) begin //each address is a byte, so this tells amount of bytes to show 
         #1;
@@ -790,7 +792,7 @@ case(Instruction[27:25])
                                     Out = 10'b0; //estado de no update Rn
                         //Decrement after
                         2'b00:   if(Instruction[21]==1'b1)
-                                    Out = 10'b0; //estado de permitir update Rn
+                                    Out = 10'b1011110010; //estado de permitir update Rn
                                 else
                                     Out = 10'b0; //estado de no update Rn
                         //Decrement before
