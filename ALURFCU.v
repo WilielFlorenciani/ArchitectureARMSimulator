@@ -200,6 +200,7 @@ end
 
 /////// END INITIALS
 endmodule
+//COntrol Unit
 
 /////////////// BEGIN CONTROL UNIT
 module ControlUnit(output reg [3:0] CondTestOp, output reg BaseRegld, MultiRegld, FRld, RFld, IRld, MARld, MDRld, R_W , MOV, output reg [2:0] MA, MC, MB, output reg [1:0] sizeOP, output reg MD, ME, MF, MG, MI, MJ, MK, output reg [4:0] OP4OP0, output reg [9:0] current_state, input [31:0] IR, input Cond, MOC, reset, clk);
