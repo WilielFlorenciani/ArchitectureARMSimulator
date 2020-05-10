@@ -18,7 +18,6 @@ module LetsGo;
 // 32'b1110_001_0100_0_1111_0001_0000_00001001 //instruccion estado 7 ADD R1, R15, #0d9 E2801009
 //32'b1110_001_0100_0_1111_0010_0000_00000011 // instruction estado 7 ADD R2, R15, #d3  E2802003
 
-//comment
 
 /////// BEGIN VARIABLES AND OBJECTS
 reg Clk, reset;
@@ -50,7 +49,7 @@ wire [3:0] A;
 // wire [3:0] B = IRBus[3:0];
 wire [3:0] C;
 wire [4:0] OP; //muxD output
-reg Cin; //wire Cin; --> for when we figure out Cin
+// wire Cin;
 
 //wires del Shifter Sign Extender
 wire [31:0] saseOut;
@@ -91,7 +90,7 @@ integer fi, code, i; reg [7:0] data; reg [31:0] Adr, EfAdr; //variables to handl
 
 ControlUnit CU(CondTestOp, FullRegLd, AddRegLd, ShiftRegLd, EqRegLd, BaseRegld, MultiRegld, FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MA, MC, MB, sizeOP, ML, MD, ME, MF, MG, MI, MJ, MK, OP4OP0, current_state, IRBus, Cond, MOC, reset, Clk);
 RegisterFile RF(PA, PB, muxKOut, A, muxFOut, C, Clk, RFld);
-alu_32 ALU(aluOut, ALU_flags[3], ALU_flags[2], ALU_flags[1], ALU_flags[0], muxGOut, AluB, OP[4:0], Cin);
+alu_32 ALU(aluOut, ALU_flags[3], ALU_flags[2], ALU_flags[1], ALU_flags[0], muxGOut, AluB, OP[4:0], FROut[3]);
 ram512x8 RAM(DataOut, MOC, MOV, R_W, Address, mdrOut, sizeOP);
 ConditionTester condition_tester(Cond, FROut[3], FROut[2], FROut[1], FROut[0], muxJOut); //use this one cuando vayas a usar FR
 // ConditionTester condition_tester(Cond, ALU_flags[3], ALU_flags[2], ALU_flags[1], ALU_flags[0], IRBus[31:28]); 
@@ -136,7 +135,7 @@ initial begin //initial to precharge memory with the file
     Adr = 0;
     // OpCode = 2'b10;
     while (!$feof(fi)) begin
-        code = $fscanf(fi, "%x", data);
+        code = $fscanf(fi, "%b", data);
         RAM.Mem[Adr] = data;
         Adr = Adr + 1;
     end
@@ -161,7 +160,7 @@ end
 initial begin
 #50 //so that clock starts when precharge tasks are done 
   Clk <= 1'b0;
-  repeat(400) #5 Clk = ~Clk;
+  repeat(20) #5 Clk = ~Clk;
 end
 
 initial begin
@@ -171,7 +170,7 @@ initial begin
 end
 
 initial begin //for signal simulations
-Cin <= 0;
+// Cin <= 0;
 // Cond <= 1; //making it 0 so that it loops back to 1
 // MOC <= 1; 
 end
@@ -186,19 +185,20 @@ end
 
 initial begin //initial test instructions
 // #551
-#2050
+// #2050
+#200
     Adr = 7'b0000000; //Address of instruction being tested 
-    EfAdr = 80;
-    $display("----- Memory contents after running: %h ----- time:%0d",{RAM.Mem[Adr+12], RAM.Mem[Adr+13], RAM.Mem[Adr+14], RAM.Mem[Adr+15]}, $time);                       
+    EfAdr = 0;
+    $display("----- Memory contents after running: %b ----- time:%0d",{RAM.Mem[Adr], RAM.Mem[Adr+1], RAM.Mem[Adr+2], RAM.Mem[Adr+3]}, $time);                       
 
-    repeat (32) begin //each address is a byte, so this tells amount of bytes to show 
+    repeat (512) begin //each address is a byte, so this tells amount of bytes to show 
         #1;
-        $display("__RAM_After_Testing: data in address %0d = %x, time: %0d", EfAdr, RAM.Mem[EfAdr], $time);
+        $display("__RAM_After_Simulating: data in address %0d = %b, time: %0d", EfAdr, RAM.Mem[EfAdr], $time);
         #1;
         EfAdr = EfAdr + 1;
         #1;
     end                                     
-    $display("----- END TESTING REPORT ----- time:%0d", $time);                                               
+    $display("----- END SIMULATION REPORT ----- time:%0d", $time);                                               
 end
 
 /////// END INITIALS
@@ -792,12 +792,13 @@ case(Instruction[27:25])
                                     Out = 10'b1011010100; //estado de no update a Rn
                         //Increment before            
                         2'b11:  if(Instruction[21]==1'b1)
-                                    Out = 10'b0; //estado de update Rn
+                                    Out = 10'b0; //estado de update Rn //734
                                 else
                                     Out = 10'b0; //estado de no update Rn
                         //Decrement after
                         2'b00:   if(Instruction[21]==1'b1)
                                     Out = 10'b1011110010; //estado de permitir update Rn
+                                    // Out = 10'b1011110011; //estado de permitir update Rn //755
                                 else
                                     Out = 10'b0; //estado de no update Rn
                         //Decrement before
@@ -1700,12 +1701,12 @@ always@(I15, rfLd) begin
     $display("__R15: %b, Clock:%b, t:%0d\n__R1: %b, Clock:%b, t:%0d\n__R2: %b, Clock:%b, t:%0d\n__R3: %b, Clock:%b, t:%0d", I15, clk, $time, I1, clk, $time, I2, clk, $time, I3, clk, $time);
 end
 
-initial begin 
-#1060
-    $display("------- Testing Report: Register File Contents ----------- t:%0d", $time);
-    $display("__R15: %b, Clock:%b, t:%0d\n__R1: %b, Clock:%b, t:%0d\n__R2: %b, Clock:%b, t:%0d\n__R3: %b, Clock:%b, t:%0d", I15, clk, $time, I1, clk, $time, I2, clk, $time, I3, clk, $time);
-    $display("------- Ends Testing Report: Register File Contents ------ t:%0d", $time);
-end
+// initial begin 
+// #1000
+//     $display("------- Testing Report: Register File Contents ----------- t:%0d", $time);
+//     $display("__R15: %b, Clock:%b, t:%0d\n__R1: %b, Clock:%b, t:%0d\n__R2: %b, Clock:%b, t:%0d\n__R3: %b, Clock:%b, t:%0d", I15, clk, $time, I1, clk, $time, I2, clk, $time, I3, clk, $time);
+//     $display("------- Ends Testing Report: Register File Contents ------ t:%0d", $time);
+// end
 
 binaryDecoder16bit decoder (BDselect, C, rfLd);
 
@@ -1925,7 +1926,7 @@ always @(posedge Clk) begin
 end
 endmodule
 
-module FlagRegister(output reg [3:0] Q, input [3:0] D, input LE, Clk); //add Cin here
+module FlagRegister(output reg [3:0] Q, input [3:0] D, input LE, Clk);
 always @(posedge Clk) begin
     if(LE) begin 
         Q <= D;
