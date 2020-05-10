@@ -656,7 +656,88 @@ case(Instruction[27:25])
                             endcase 
                         end
                 end   
+               //shifter operand registar special case 
+            else if(Instruction[11:4]==8'b00000000)
+                begin
+                    if(Instruction[20]==1'b0)
+                        begin
+                            case(Instruction[24:21])
+                            //case de opcode de la instruccion
+                            //AND
+                            4'b0000:    Out = 10'b0111110100;
+                            //EOR
+                            4'b0001:    Out = 10'b0111111000;
+                            //SUB
+                            4'b0010:    Out = 10'b0111101001;
+                            //RSB
+                            4'b0011:    Out = 10'b0111101100;
+                            //ADD
+                            4'b0100:    Out = 10'b0000000111;
+                            //ADC
+                            4'b0101:    Out = 10'b0111101110;
+                            //SBC
+                            4'b0110:    Out = 10'b0111110000;
+                            //RSC
+                            4'b0111:    Out = 10'b0111110010;
+                            //TST
+                            4'b1000:    Out = 10'b0111100111;
+                            //TEQ
+                            4'b1001:    Out = 10'b0111101000;
+                            //CMP
+                            4'b1010:    Out = 10'b0111100101;
+                            //CMN
+                            4'b1011:    Out = 10'b0111100110;
+                            //ORR
+                            4'b1100:    Out = 10'b0111111010;
+                            //MOV
+                            4'b1101:    Out = 10'b0111100010;
+                            //BIC
+                            4'b1110:    Out = 10'b0111110110;
+                            //MVN
+                            4'b1111:    Out = 10'b0111100100;
+                            endcase
+                        end
+                    else
+                        begin
+                            case(Instruction[24:21])
+                            //case de opcode de la instruccion
+                            //ANDS
+                            4'b0000:    Out = 10'b0111110011;
+                            //EORS
+                            4'b0001:    Out = 10'b0111110111;
+                            //SUBS
+                            4'b0010:    Out = 10'b0111101010;
+                            //RSBS
+                            4'b0011:    Out = 10'b0111101011;
+                            //ADDS
+                            4'b0100:    Out = 10'b0000000101;
+                            //ADCS
+                            4'b0101:    Out = 10'b0111101101;
+                            //SBCS
+                            4'b0110:    Out = 10'b0111101111;
+                            //RSCS
+                            4'b0111:    Out = 10'b0111110001;
+                            //TST
+                            4'b1000:    Out = 10'b0111100111;
+                            //TEQ
+                            4'b1001:    Out = 10'b0111101000;
+                            //CMP
+                            4'b1010:    Out = 10'b0111100101;
+                            //CMN
+                            4'b1011:    Out = 10'b0111100110;
+                            //ORRS
+                            4'b1100:    Out = 10'b0111111001;
+                            //MOVS
+                            4'b1101:    Out = 10'b0111100001;
+                            //BICS
+                            4'b1110:    Out = 10'b0111110101;
+                            //MVNS
+                            4'b1111:    Out = 10'b0111100011;
+                            endcase
+                        end    
+                end
             end
+        
 
                      
     3'b010: begin   //adressing mode 2 immediate
