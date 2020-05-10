@@ -27,6 +27,9 @@ parameter noValue_4 = 4'b0000;
 parameter noValue_1 = 1'b0;
 parameter noValue_32 = 32'b0;
 
+//time
+//200$finish();
+
 //wires de Control Unit
 wire MK, MultiRegld, MJ, MI, MG, MF, FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MD, ME;
 wire [2:0] MA, MB, MC;
@@ -129,6 +132,7 @@ DecInstrRegister shiftedreg(shiftedregOut, decinstrShifterOut, ShiftRegLd, Clk);
 /////// BEGIN INITIALS
 
 initial begin //initial to precharge memory with the file
+ 
     $display("----- Initiating Precharge -----");
     fi = $fopen("PF1_Vega_Rodriguez_Jorge_ramdata.txt","r");
     // Adr = 9'b000000000;
@@ -136,20 +140,6 @@ initial begin //initial to precharge memory with the file
     // OpCode = 2'b10;
     while (!$feof(fi)) begin
         code = $fscanf(fi, "%b", data);
-        RAM.Mem[Adr] = data;
-        Adr = Adr + 1;
-    end
-    $fclose(fi);
-    $display("----- Finished Precharge ----- time:%0d", $time);
-end
-initial begin //initial to precharge memory with the file
-    $display("----- Initiating Precharge2 -----");
-    fi = $fopen("seba_ram_data.txt","r");
-    // Adr = 9'b000000000;
-    Adr = 40;
-    // OpCode = 2'b10;
-    while (!$feof(fi)) begin
-        code = $fscanf(fi, "%x", data);
         RAM.Mem[Adr] = data;
         Adr = Adr + 1;
     end
@@ -174,7 +164,7 @@ end
 initial begin
 #50 //so that clock starts when precharge tasks are done 
   Clk <= 1'b0;
-  repeat(20) #5 Clk = ~Clk;
+  repeat(150) #5 Clk = ~Clk;
 end
 
 initial begin
@@ -188,10 +178,10 @@ initial begin //for signal simulations
 // Cond <= 1; //making it 0 so that it loops back to 1
 // MOC <= 1; 
 end
-
 initial begin //BEGIN PRINT
+
 #50 //delay to wait for precharge things
-$display("\n~~~~~~~~Initiating ALURFCU simulation~~~~~~~~\n");
+    $display("\n~~~~~~~~Initiating ALURFCU simulation~~~~~~~~\n");
 // $monitor("%h    %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b",IR,aluOut,OP,current_state,FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MD, ME, MA, MB, MC,Clk,reset, $time); 
     // $monitor("IR:%x, Dout:%x, alu:%x, sizeOP:%b, State:%0d, RFld:%b, MA:%b, MB:%b, MC:%b, MD:%b, ME:%b, OP:%b, IRld:%b, MARld:%b, MDRld:%b, RW:%b, MOV:%b, MOC:%b, Cond:%b, Clk:%b, rst:%b, t:%0d", IRBus, DataOut, aluOut, sizeOP, current_state, RFld, MA, MB, MC, MD, ME, OP4OP0, IRld, MARld, MDRld, R_W, MOV, MOC, Cond, Clk, reset, $time);
     $monitor("IR:%x, Dout:%x, alu:%x, MGout:%x, sOP:%b, State:%0d, RFld:%b, MA:%b, MB:%b, MC:%b, MD:%b, ME:%b, MJ:%b, MG:%b, OP:%b, MARld:%b, MDRld:%b, RW:%b, MOV:%b, MOC:%b, Cond:%b, Clk:%b, t:%0d", IRBus, DataOut, aluOut, muxGOut, sizeOP, current_state, RFld, MA, MB, MC, MD, ME, MJ, MG, OP4OP0, MARld, MDRld, R_W, MOV, MOC, Cond, Clk, $time);
