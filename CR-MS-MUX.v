@@ -6,19 +6,26 @@ reg Z, C, N, V;
 reg [3:0] CC;
 
 wire [3:0] encOut;
-reg [31:0] encIn;
+reg [31:0] encIn, shifterIn;
+wire [31:0] shifterOut;
 
 // ConditionTester condTest (Cond, Z, C, N, V, CC);
 MultiRegEncoder encoder (encOut, encIn);
+DecInstrShifter shifter (shifterOut, shifterIn);
+
+// initial begin
+//   $display("~~~~~ Initiating Encoder Test ~~~~~");
+//   $monitor("Out:%b, In:%b", encOut, encIn);
+// end
 
 initial begin
-  $display("~~~~~ Initiating Encoder Test ~~~~~");
-  $monitor("Out:%b, In:%b", encOut, encIn);
+  $display("~~~~~ Initiating Shifter Test ~~~~~");
+  $monitor("Out:%b, In:%b", shifterOut, shifterIn);
 end
 
 initial begin
 // encIn = 32'b1000_0000_0000_0000_0000_0000_0000_0000;
-encIn = {32'b1000_0000_0000_0000, 16'b0};
+shifterIn = {32'b0000_0000_0100_0000, 16'b0};
 end
 
 // initial begin
@@ -34,6 +41,11 @@ end
 //   V = 1'b1;
 // end
 
+endmodule
+
+module DecInstrShifter(output reg [31:0] out, input [31:0] in);
+always @(in)
+    out <= in << 2;
 endmodule
 
 
