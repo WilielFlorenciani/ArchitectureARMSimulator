@@ -109,7 +109,7 @@ Multiplexer8x3_32 MuxB(AluB, PB, saseOut, mdrOut, noValue_32, multiregOut, fullr
 Multiplexer8x3_4 MuxC(C, IRBus[19:16], IRBus[15:12], number15, adder4Out, multiencOut, MC);
 Multiplexer2x1_5 MuxD(OP,{1'b0, IRBus[24:21]}, OP4OP0, MD);
 Multiplexer2x1_32 MuxE(muxEOut, DataOut, aluOut, ME);
-Multiplexer2x1_4 MuxF(muxFOut, IRBus[3:0],IRBus[19:16], MF);
+Multiplexer2x1_4 MuxF(muxFOut, IRBus[3:0],IRBus[15:12], MF); 
 Multiplexer2x1_32 MuxG(muxGOut, PA, {IRBus[15:0], 16'b0}, MG); //feeds alu input A
 // Multiplexer2x1_32 MuxH(muxHOut, IRBus, multiregOut, MH); //feeds sase
 Multiplexer2x1_32 MuxI(muxIOut, 32'h10000, aluOut, MI); //feeds multireg
@@ -867,7 +867,7 @@ case(Instruction[27:25])
     3'b101: if(Instruction[24]==1'b0) 
                 Out = 10'b0001000000; //branch 
             else
-                Out = 10'b1101011011; // branch&link
+                Out = 10'b1110100101; // branch&link
     
     //load/store multiple
     3'b100: 
