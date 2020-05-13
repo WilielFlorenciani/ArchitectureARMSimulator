@@ -2353,56 +2353,25 @@ begin
         if(instruction[4]==0)
         begin
             if(instruction[6:5]==2'b00)
-            begin
-                if(instruction[11:7] == 5'b00000)
                 begin
-                    extender_out = B;
-                    carry = Cin;
-                end
-                else
-                    begin
-                        extender_out = B <<instruction[11:7];
-                        carry = B[32-instruction[11:7]];
-                    end
-            end 
+                  extender_out = B <<instruction[11:7];
+                  carry = B[32-instruction[11:7]];
+                end 
 
             else if(instruction[6:5]==2'b01)
                 begin
-                    if(instruction[11:7]==5'b00000)
-                        begin
-                            extender_out = 32'b0;
-                            carry = B[31];
-                        end
-                    else
-                        begin
-                            extender_out = B >>instruction[11:7];
-                            carry = B[instruction[11:7]-1];
-                        end
+                 extender_out = B >>instruction[11:7];
+                 carry = B[instruction[11:7]-1];
                 end
             else if(instruction[6:5]==2'b10)
-                begin
-                    if(instruction[11:7]==5'b00000) begin
-                        if(B[31]==0)
-                            begin
-                                extender_out = 32'b0;
-                                carry = B[31];
-                            end
-                        else
-                            begin
-                                extender_out = 32'hFFFFFFFF;
-                                carry = B[31];
-                            end
-                    end
-                    else        
-                        begin
+                    begin
                         extender_out = $signed(B) >>>instruction[11:7];
                         carry = B[instruction[11:7]-1];
-                        end
-                end
+                    end
             else if(instruction[6:5]== 2'b11)
                     begin
-                         extender_out =  B >>instruction[11:7];
-                         carry = B[instruction[11:7]-1];
+                        extender_out =  B >>instruction[11:7];
+                        carry = B[instruction[11:7]-1];
                     end
         end
         else if(instruction[4]==1'b1 && instruction[7]==1'b1 && instruction[22:21]==2'b10 && instruction[24]== 1'b1)       
