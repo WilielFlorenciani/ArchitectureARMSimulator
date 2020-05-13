@@ -155,7 +155,7 @@ $display("\n~~~~~~~~Initiating ARM Simulation~~~~~~~~\n");
 // $monitor("%h    %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b",IR,aluOut,OP,current_state,FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MD, ME, MA, MB, MC,Clk,reset, $time); 
     // $monitor("IR:%x, Dout:%x, alu:%x, sizeOP:%b, State:%0d, RFld:%b, MA:%b, MB:%b, MC:%b, MD:%b, ME:%b, OP:%b, IRld:%b, MARld:%b, MDRld:%b, RW:%b, MOV:%b, MOC:%b, Cond:%b, Clk:%b, rst:%b, t:%0d", IRBus, DataOut, aluOut, sizeOP, current_state, RFld, MA, MB, MC, MD, ME, OP4OP0, IRld, MARld, MDRld, R_W, MOV, MOC, Cond, Clk, reset, $time);
     // $monitor("IR:%x, Dout:%x, alu:%x, MGout:%x, sOP:%b, State:%0d, RFld:%b, MA:%b, MB:%b, MC:%b, MD:%b, ME:%b, MJ:%b, MG:%b, OP:%b, MARld:%b, MDRld:%b, RW:%b, MOV:%b, MOC:%b, Cond:%b, Clk:%b, t:%0d", IRBus, DataOut, aluOut, muxGOut, sizeOP, current_state, RFld, MA, MB, MC, MD, ME, MJ, MG, OP4OP0, MARld, MDRld, R_W, MOV, MOC, Cond, Clk, $time);
-    $monitor("FROut: %b, IR:%b, MARout:%0d, RAMout:%0d, Cond:%b, Clk:%b, t:%0d", FROut, IRBus, Address, DataOut, Cond, Clk, $time);
+    $monitor("State: %d, FROut: %b, IR:%b, MARout:%0d, RAMout:%0d, Cond:%b, Clk:%b, t:%0d", current_state, FROut, IRBus, Address, DataOut, Cond, Clk, $time);
 end
 
 initial begin //initial test instructions
@@ -321,6 +321,8 @@ always @(in)
 endmodule
 
 //BEGIN ENCODER CONTROL UNIT
+
+//AÑADIR DEFAULTS A LOS CASES INSIDE THE BIG CASE
 module Encoder(output reg [9:0] Out, input [31:0] Instruction);
 always @(Instruction) begin
 case(Instruction[27:25])
@@ -361,6 +363,7 @@ case(Instruction[27:25])
                     4'b1110:    Out = 10'b0111110110;
                     //MVN
                     4'b1111:    Out = 10'b0111100100;
+                    default:    Out = 10'b0000000001;
                     endcase
                 end    
             
@@ -400,6 +403,8 @@ case(Instruction[27:25])
                     4'b1110:    Out = 10'b0111110101;
                     //MVNS
                     4'b1111:    Out = 10'b0111100011;
+
+                    default:    Out = 10'b0000000001;
                     endcase
                 end
             end    
@@ -427,6 +432,8 @@ case(Instruction[27:25])
                             3'b101: Out = 10'b0010010011;
                         //register pre-index sub
                             3'b001: Out = 10'b0010011000;
+
+                            default: Out = 10'b0000000001;
                         endcase
                     end
                 //STRD
@@ -449,6 +456,8 @@ case(Instruction[27:25])
                             3'b101:     Out = 10'b1000101101;
                         //register pre-index sub
                             3'b001:     Out = 10'b1000110110;
+
+                            default:    Out = 10'b0000000001;
                         endcase
                     end
                 //LDRD
@@ -471,6 +480,7 @@ case(Instruction[27:25])
                             3'b101:     Out = 10'b1010010101;
                         //register pre-index sub
                             3'b001:     Out = 10'b1010011110;
+                            default:    Out = 10'b0000000001;
                         endcase
                     end
                 //ldrh
@@ -493,6 +503,7 @@ case(Instruction[27:25])
                             3'b101:     Out = 10'b0100000011;
                         //register pre-index sub
                             3'b001:     Out = 10'b0100001000;
+                            default:    Out = 10'b0000000001;
                         endcase
                     end
                 //ldrsb
@@ -515,6 +526,7 @@ case(Instruction[27:25])
                                 3'b101:     Out = 10'b0101111001;
                             //register pre-index sub
                                 3'b001:     Out = 10'b0101111111;
+                                default:    Out = 10'b0000000001;
                         endcase
                     end
                 //ldrsh    
@@ -537,6 +549,7 @@ case(Instruction[27:25])
                                 3'b101:     Out = 10'b0110111101;
                             //register pre-index sub
                                 3'b001:     Out = 10'b0111000011;
+                                default:    Out = 10'b0000000001;
                         endcase
                     end
                 end
@@ -554,6 +567,7 @@ case(Instruction[27:25])
                                 3'b100:     Out = 10'b0010100111;
                                 //strh register post-index sub
                                 3'b000:     Out = 10'b0010101100;
+                                default:    Out = 10'b0000000001;
                             endcase
                         end
                     //STRD
@@ -568,6 +582,7 @@ case(Instruction[27:25])
                                 3'b100:     Out = 10'b1001010001;
                                 //strh register post-index sub
                                 3'b000:     Out = 10'b1001011010;
+                                default:    Out = 10'b0000000001;
                             endcase
                         end
                     //ldrh
@@ -582,6 +597,7 @@ case(Instruction[27:25])
                                 3'b100:     Out = 10'b0100010111;
                                 //register post-index sub
                                 3'b000:     Out = 10'b0100011100;
+                                default:    Out = 10'b0000000001;
                             endcase 
                         end
                     //ldrsb
@@ -596,6 +612,7 @@ case(Instruction[27:25])
                                 3'b100:     Out = 10'b0110010001;
                                 //register post-index sub
                                 3'b000:     Out = 10'b0110010111;
+                                default:    Out = 10'b0000000001;
                             endcase 
                         end
                     //ldrsh
@@ -610,6 +627,7 @@ case(Instruction[27:25])
                                 3'b100:     Out = 10'b0111010101;
                                 //register post-index sub
                                 3'b000:  Out = 10'b0111011011;
+                                default:    Out = 10'b0000000001;
                             endcase 
                         end
                     //LDRD
@@ -624,6 +642,7 @@ case(Instruction[27:25])
                                 3'b100:     Out = 10'b1010111001;
                                 //register post-index sub
                                 3'b000:     Out = 10'b1011000010;
+                                default:    Out = 10'b0000000001;
                             endcase 
                         end
                 end   
@@ -666,6 +685,7 @@ case(Instruction[27:25])
                             4'b1110:    Out = 10'b0111110110;
                             //MVN
                             4'b1111:    Out = 10'b0111100100;
+                            default:    Out = 10'b0000000001;
                             endcase
                         end
                     else
@@ -704,6 +724,7 @@ case(Instruction[27:25])
                             4'b1110:    Out = 10'b0111110101;
                             //MVNS
                             4'b1111:    Out = 10'b0111100011;
+                            default:    Out = 10'b0000000001;
                             endcase
                         end    
                 end
@@ -769,6 +790,8 @@ case(Instruction[27:25])
                 //immed post-index sub
                 5'b00001:   Out = 10'b0101001010;
 
+                default:    Out = 10'b0000000001;
+
 
             endcase
             end
@@ -831,6 +854,8 @@ case(Instruction[27:25])
                     5'b01001:   Out = 10'b0101001111;
                     //post-index sub
                     5'b00001:   Out = 10'b101010100;
+
+                    default:    Out = 10'b0000000001;
                 endcase
                 end
             end
@@ -867,7 +892,9 @@ case(Instruction[27:25])
                         2'b10:  if(Instruction[21]==1'b1)
                                     Out = 10'b0; //estado de update Rn
                                 else
-                                    Out = 10'b0; //estado de no update Rn  
+                                    Out = 10'b0; //estado de no update Rn
+
+                        default:    Out = 10'b0000000001;  
                     endcase
                 end
             else
@@ -894,6 +921,8 @@ case(Instruction[27:25])
                                     Out = 10'b0; //estado de update Rn
                                 else
                                     Out = 10'b0; //estado de no update Rn  
+                        
+                        default:    Out = 10'b0000000001;
                     endcase
                    
                 end
@@ -1871,7 +1900,7 @@ module alu_32 (output reg [31:0] Out, output reg Carry,Zero,Neg,Vflow, input [31
 always @(*) begin
 //  $display("__ALU: A:%b, B:%b, Sel:%b, aluOut:%b, t:%0d", A, B, Sel, Out, $time);
     // Out = 32'b0;
-    // Carry = 1'b0;
+     Carry = 1'b0;
     // Zero = 1'b0;
     // Neg = 1'b0;
     // Vflow = 1'b0;
@@ -1900,14 +1929,14 @@ always @(*) begin
     5'b10001:   Out = A + 4;
     5'b10010:   Out = A + B + 4;
     5'b10011:  Out = A >>1; // right shift
-    5'b10100:  Out = A <<1; // left shift
+    5'b10100:  {Carry,Out} = A <<1; // left shift
     5'b10101:   Out = A - B + 4;
-    5'b10110: Out = B << 1;
+    5'b10110: {Carry,Out} = B << 1;
     endcase
     
      Zero = (~|Out); //bitwise or
      Neg = (Out[31] == 1);
-     Vflow = ((~Out[31]&A[31]&B[31]) || (Out[31] & ~A[31] & ~B[31])); 
+     Vflow = ((~Out[31] && A[31] && B[31]) || (Out[31] && ~A[31] && ~B[31])); //arreglar asap
     end
     
 
