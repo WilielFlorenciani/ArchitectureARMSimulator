@@ -88,7 +88,7 @@ Multiplexer8x3_32 MuxB(AluB, PB, saseOut, mdrOut, noValue_32, multiregOut, fullr
 Multiplexer8x3_4 MuxC(C, IRBus[19:16], IRBus[15:12], number15, adder4Out, multiencOut, MC);
 Multiplexer2x1_5 MuxD(OP,{1'b0, IRBus[24:21]}, OP4OP0, MD);
 Multiplexer2x1_32 MuxE(muxEOut, DataOut, aluOut, ME);
-Multiplexer2x1_4 MuxF(muxFOut, IRBus[3:0],IRBus[19:16], MF);
+Multiplexer2x1_4 MuxF(muxFOut, IRBus[3:0],IRBus[15:12], MF);
 Multiplexer2x1_32 MuxG(muxGOut, PA, {IRBus[15:0], 16'b0}, MG); //feeds alu input A
 // Multiplexer2x1_32 MuxH(muxHOut, IRBus, multiregOut, MH); //feeds sase
 Multiplexer2x1_32 MuxI(muxIOut, 32'h10000, aluOut, MI); //feeds multireg
@@ -157,7 +157,7 @@ end
 initial begin
 #160 //so that clock starts when precharge tasks are done 
   Clk <= 1'b0;
-  repeat(400) #5 Clk = ~Clk;
+  repeat(515) #5 Clk = ~Clk;
 end
 
 initial begin
@@ -178,18 +178,18 @@ $display("\n~~~~~~~~Initiating ARM Simulation~~~~~~~~\n");
 // $monitor("%h    %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b",IR,aluOut,OP,current_state,FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MD, ME, MA, MB, MC,Clk,reset, $time); 
     // $monitor("IR:%x, Dout:%x, alu:%x, sizeOP:%b, State:%0d, RFld:%b, MA:%b, MB:%b, MC:%b, MD:%b, ME:%b, OP:%b, IRld:%b, MARld:%b, MDRld:%b, RW:%b, MOV:%b, MOC:%b, Cond:%b, Clk:%b, rst:%b, t:%0d", IRBus, DataOut, aluOut, sizeOP, current_state, RFld, MA, MB, MC, MD, ME, OP4OP0, IRld, MARld, MDRld, R_W, MOV, MOC, Cond, Clk, reset, $time);
     // $monitor("IR:%x, Dout:%x, alu:%x, MGout:%x, sOP:%b, State:%0d, RFld:%b, MA:%b, MB:%b, MC:%b, MD:%b, ME:%b, MJ:%b, MG:%b, OP:%b, MARld:%b, MDRld:%b, RW:%b, MOV:%b, MOC:%b, Cond:%b, Clk:%b, t:%0d", IRBus, DataOut, aluOut, muxGOut, sizeOP, current_state, RFld, MA, MB, MC, MD, ME, MJ, MG, OP4OP0, MARld, MDRld, R_W, MOV, MOC, Cond, Clk, $time);
-    $monitor("State:%0d, IR:%b, MARout:%0d, RAMout:%0d, Cond:%b, Clk:%b, t:%0d", current_state, IRBus, Address, DataOut, Cond, Clk, $time);
+    $monitor("FROut: %b, IR:%b, MARout:%0d, RAMout:%0d, Cond:%b, Clk:%b, t:%0d", FROut, IRBus, Address, DataOut, Cond, Clk, $time);
 end
 
 initial begin //initial test instructions
 // #551
-#2200
+#2740
 // #1470
     Adr = 7'b0000000; //Address of instruction being tested 
     EfAdr = 0;
     $display("----- Memory contents after simulating ----- time:%0d", $time);                       
 
-    repeat (16) begin 
+    repeat (64) begin 
         #1;
         $display("__RAM_After_Simulating: word in address %0d = %b, time:%0d", EfAdr, {RAM.Mem[EfAdr], RAM.Mem[EfAdr+1], RAM.Mem[EfAdr+2], RAM.Mem[EfAdr+3]}, $time);
         #1;
@@ -1865,7 +1865,7 @@ module Microstore (output reg [57:0] out, output reg [9:0] current_state, input 
         58'b0000000010110000010000000001000001010110100110000000000000, //930
         58'b0000000000100000000000000000000000000000101011011110011100, //931
         58'b0000000001000000001000000000000000000000100110000000000000, //932
-        58'b0000000000000000001000000100001011010001000100000001000000 //933
+        58'b0000000000000000001000000100001011010000000100000001000000 //933
        };
 
 always @(next_state, reset)
@@ -2400,7 +2400,7 @@ begin
                 end
                 else
                     begin
-                        extender_out = B << instruction[11:7];
+                        extender_out = B <<instruction[11:7];
                         carry = B[32-instruction[11:7]];
                     end
             end 
@@ -2414,7 +2414,7 @@ begin
                         end
                     else
                         begin
-                            extender_out = B >> instruction[11:7];
+                            extender_out = B >>instruction[11:7];
                             carry = B[instruction[11:7]-1];
                         end
                 end
@@ -2434,13 +2434,13 @@ begin
                     end
                     else        
                         begin
-                        extender_out = $signed(B) >>> instruction[11:7];
+                        extender_out = $signed(B) >>>instruction[11:7];
                         carry = B[instruction[11:7]-1];
                         end
                 end
             else if(instruction[6:5]== 2'b11)
                     begin
-                         extender_out =  B >> instruction[11:7];
+                         extender_out =  B >>instruction[11:7];
                          carry = B[instruction[11:7]-1];
                     end
         end
