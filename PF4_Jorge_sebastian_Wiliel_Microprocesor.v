@@ -75,8 +75,7 @@ ControlUnit CU(CondTestOp, FullRegLd, AddRegLd, ShiftRegLd, EqRegLd, BaseRegld, 
 RegisterFile RF(PA, PB, muxKOut, A, muxFOut, C, Clk, RFld);
 alu_32 ALU(aluOut, ALU_flags[3], ALU_flags[2], ALU_flags[1], ALU_flags[0], muxGOut, AluB, OP[4:0], FROut[3]);
 ram512x8 RAM(DataOut, MOC, MOV, R_W, Address, mdrOut, sizeOP);
-ConditionTester condition_tester(Cond, FROut[3], FROut[2], FROut[1], FROut[0], muxJOut); //use this one cuando vayas a usar FR
-// ConditionTester condition_tester(Cond, ALU_flags[3], ALU_flags[2], ALU_flags[1], ALU_flags[0], IRBus[31:28]); 
+ConditionTester condition_tester(Cond, FROut[3], FROut[2], FROut[1], FROut[0], muxJOut); 
 shift_sign_extender SASExtender(saseOut, ALU_flags[3], IRBus, PB, FROut[3]);
 Adder_4 adder4(adder4Out, IRBus[15:12]);
 MultiRegEncoder multireg_encoder(multiencOut, multiregOut);
@@ -91,7 +90,6 @@ Multiplexer2x1_5 MuxD(OP,{1'b0, IRBus[24:21]}, OP4OP0, MD);
 Multiplexer2x1_32 MuxE(muxEOut, DataOut, aluOut, ME);
 Multiplexer2x1_4 MuxF(muxFOut, IRBus[3:0],IRBus[15:12], MF);
 Multiplexer2x1_32 MuxG(muxGOut, PA, {IRBus[15:0], 16'b0}, MG); //feeds alu input A
-// Multiplexer2x1_32 MuxH(muxHOut, IRBus, multiregOut, MH); //feeds sase
 Multiplexer2x1_32 MuxI(muxIOut, 32'h10000, aluOut, MI); //feeds multireg
 Multiplexer2x1_4 MuxJ(muxJOut, IRBus[31:28], CondTestOp, MJ); //feeds condition tester 
 Multiplexer2x1_32 MuxK(muxKOut, aluOut, baseregOut, MK); //feeds PC
@@ -114,9 +112,7 @@ DecInstrRegister shiftedreg(shiftedregOut, decinstrShifterOut, ShiftRegLd, Clk);
 initial begin //initial to precharge memory with the file
     $display("----- Initiating Precharge -----");
     fi = $fopen("PF1_Vega_Rodriguez_Jorge_ramdata.txt","r");
-    // Adr = 9'b000000000;
     Adr = 0;
-    // OpCode = 2'b10;
     while (!$feof(fi)) begin
         code = $fscanf(fi, "%b", data);
         RAM.Mem[Adr] = data;
@@ -125,21 +121,6 @@ initial begin //initial to precharge memory with the file
     $fclose(fi);
     $display("----- Finished Precharge ----- time:%0d", $time);
 end
-
-// initial begin //initial to precharge memory with the file
-//     $display("----- Initiating Precharge2 -----");
-//     fi = $fopen("seba_ram_data.txt","r");
-//     // Adr = 9'b000000000;
-//     Adr = 40;
-//     // OpCode = 2'b10;
-//     while (!$feof(fi)) begin
-//         code = $fscanf(fi, "%x", data);
-//         RAM.Mem[Adr] = data;
-//         Adr = Adr + 1;
-//     end
-//     $fclose(fi);
-//     $display("----- Finished Precharge ----- time:%0d", $time);
-// end
 
 initial begin //initial to read content of memory after precharging
 #1
@@ -167,11 +148,6 @@ initial begin
 #5 reset = ~reset;
 end
 
-initial begin //for signal simulations
-// Cin <= 0;
-// Cond <= 1; //making it 0 so that it loops back to 1
-// MOC <= 1; 
-end
 
 initial begin //BEGIN PRINT
 #160 //delay to wait for precharge things
@@ -220,7 +196,6 @@ wire [9:0] val1 = 1;
 wire [9:0] new_state, curr_state;
 
 always @ (*) begin
-    // Cin <= CRout[?];
     EqRegLd <= CRout[57];
     AddRegLd <= CRout[56];
     ShiftRegLd <= CRout[55];
@@ -259,7 +234,7 @@ ControlRegister control_register (CRout, curr_state, clk, CRin, new_state);
 NextStateAddressSelector nsas (M, invOut, CRout[15:13]);
 Inverter inv (invOut, mux1Out, CRout[12]);
 IncrementerRegister incr_reg (incrementedState, AdderOut, clk);
-Multiplexer1_4x2 mux1_4x2 (mux1Out, MOC, Cond, noValue, noValue, CRout[11:10]); //aqui MOC tiene que ir en 0 y Cond en 1//CRout?
+Multiplexer1_4x2 mux1_4x2 (mux1Out, MOC, Cond, noValue, noValue, CRout[11:10]); 
 Encoder encoder (EncoderOut, IR);
 
 endmodule
@@ -2050,21 +2025,6 @@ module register32bit(output reg [31:0] Q, input [31:0] D, input clk, ld);
 endmodule
 ///////////////// END REGISTER FILE
 
-///////////////// BEGIN MUXES
-//this one's used for MuxB --v
-// module Multiplexer4x2_32(output reg [31:0] Q, input [31:0] I0, I1, I2, I3, input [1:0] S);
-    
-//     always @ (*)
-//     begin
-//         case(S)
-//             4'h0: Q <= I0;
-//             4'h1: Q <= I1;
-//             4'h2: Q <= I2;
-//             4'h3: Q <= I3;
-//         endcase
-//         end
-    
-// endmodule 
 
 //this one's used for MuxA and MuxC
 // module Multiplexer8x3_4(output reg [3:0] Q, input [3:0] I0, I1, I2, I3, I4, I5, I6, I7, input [1:0] S);
