@@ -86,7 +86,7 @@ DecInstrShifter decinstr_shifter(decinstrShifterOut, fullregOut);
 
 Multiplexer8x3_4 MuxA(A, IRBus[19:16], IRBus[15:12], number15, adder4Out, noValue_4, multiencOut, MA);
 Multiplexer8x3_32 MuxB(AluB, PB, saseOut, mdrOut, noValue_32, multiregOut, fullregOut, MB); 
-Multiplexer8x3_4 MuxC(C, IRBus[19:16], IRBus[15:12], number15, adder4Out, number14, multiencOut, MC);
+Multiplexer8x3_4 MuxC(C, IRBus[19:16], IRBus[15:12], number15, adder4Out, multiencOut, number14, MC);
 Multiplexer2x1_5 MuxD(OP,{1'b0, IRBus[24:21]}, OP4OP0, MD);
 Multiplexer2x1_32 MuxE(muxEOut, DataOut, aluOut, ME);
 Multiplexer2x1_4 MuxF(muxFOut, IRBus[3:0],IRBus[15:12], MF);
@@ -1922,7 +1922,7 @@ module Microstore (output reg [57:0] out, output reg [9:0] current_state, input 
         58'b0000000000100000000000000000000000000000101011011110011100, //931
         58'b0000000001000000001000000000000000000000100110000000000000, //932
         58'b0000000000000000001000000100001011010001000110000000000000, //933
-        58'b0000000000000000001000000100001011010001000100000001000000 //934
+        58'b0000000000000000001000000100010101000100000100000000000001 //934
        };
 
 always @(next_state, reset)
