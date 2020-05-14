@@ -7,6 +7,7 @@ reg Clk, reset;
 
 parameter number15 = 4'b1111;
 parameter noValue_4 = 4'b0000;
+parameter number14 = 4'b1110;
 parameter noValue_1 = 1'b0;
 parameter noValue_32 = 32'b0;
 
@@ -83,9 +84,9 @@ DecInstrAdder decinstr_adder(decinstrAdderOut, fullregOut);
 DecInstrShifter decinstr_shifter(decinstrShifterOut, fullregOut);
 
 
-Multiplexer8x3_4 MuxA(A, IRBus[19:16], IRBus[15:12], number15, adder4Out, multiencOut, MA);
+Multiplexer8x3_4 MuxA(A, IRBus[19:16], IRBus[15:12], number15, adder4Out, noValue_4, multiencOut, MA);
 Multiplexer8x3_32 MuxB(AluB, PB, saseOut, mdrOut, noValue_32, multiregOut, fullregOut, MB); 
-Multiplexer8x3_4 MuxC(C, IRBus[19:16], IRBus[15:12], number15, adder4Out, multiencOut, MC);
+Multiplexer8x3_4 MuxC(C, IRBus[19:16], IRBus[15:12], number15, adder4Out, number14, multiencOut, MC);
 Multiplexer2x1_5 MuxD(OP,{1'b0, IRBus[24:21]}, OP4OP0, MD);
 Multiplexer2x1_32 MuxE(muxEOut, DataOut, aluOut, ME);
 Multiplexer2x1_4 MuxF(muxFOut, IRBus[3:0],IRBus[15:12], MF);
@@ -155,7 +156,7 @@ $display("\n~~~~~~~~Initiating ARM Simulation~~~~~~~~\n");
 // $monitor("%h    %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b",IR,aluOut,OP,current_state,FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MD, ME, MA, MB, MC,Clk,reset, $time); 
     // $monitor("IR:%x, Dout:%x, alu:%x, sizeOP:%b, State:%0d, RFld:%b, MA:%b, MB:%b, MC:%b, MD:%b, ME:%b, OP:%b, IRld:%b, MARld:%b, MDRld:%b, RW:%b, MOV:%b, MOC:%b, Cond:%b, Clk:%b, rst:%b, t:%0d", IRBus, DataOut, aluOut, sizeOP, current_state, RFld, MA, MB, MC, MD, ME, OP4OP0, IRld, MARld, MDRld, R_W, MOV, MOC, Cond, Clk, reset, $time);
     // $monitor("IR:%x, Dout:%x, alu:%x, MGout:%x, sOP:%b, State:%0d, RFld:%b, MA:%b, MB:%b, MC:%b, MD:%b, ME:%b, MJ:%b, MG:%b, OP:%b, MARld:%b, MDRld:%b, RW:%b, MOV:%b, MOC:%b, Cond:%b, Clk:%b, t:%0d", IRBus, DataOut, aluOut, muxGOut, sizeOP, current_state, RFld, MA, MB, MC, MD, ME, MJ, MG, OP4OP0, MARld, MDRld, R_W, MOV, MOC, Cond, Clk, $time);
-    $monitor("FROut: %b, IR:%b, MARout:%0d, RAMout:%0d, Cond:%b, Clk:%b, t:%0d", FROut, IRBus, Address, DataOut, Cond, Clk, $time);
+    $monitor("State:%d, FROut: %b, IR:%b, MARout:%0d, RAMout:%0d, Cond:%b, Clk:%b, t:%0d", current_state, FROut, IRBus, Address, DataOut, Cond, Clk, $time);
 end
 
 initial begin //initial test instructions
@@ -986,7 +987,7 @@ endmodule
 
 module Microstore (output reg [57:0] out, output reg [9:0] current_state, input reset, input [9:0] next_state);
     //n2n1n0 inv s1s0 moore cr(6)
-        parameter[0:58 * 934 - 1] CR_states = { //  cambiar aqui el numero total de estados que hay 
+        parameter[0:58 * 935 - 1] CR_states = { //  cambiar aqui el numero total de estados que hay 
         58'b0000000000000000001000000000110101001101000110000000000000, //0
         58'b0000000000000000000010000100000001010000000110000000000000, //1
         58'b0000000000000000001000110100000101010001100110000000000000, //2
@@ -1920,7 +1921,8 @@ module Microstore (output reg [57:0] out, output reg [9:0] current_state, input 
         58'b0000000010110000010000000001000001010110100110000000000000, //930
         58'b0000000000100000000000000000000000000000101011011110011100, //931
         58'b0000000001000000001000000000000000000000100110000000000000, //932
-        58'b0000000000000000001000000100001011010000000100000001000000 //933
+        58'b0000000000000000001000000100001011010001000110000000000000, //933
+        58'b0000000000000000001000000100001011010001000100000001000000 //934
        };
 
 always @(next_state, reset)
@@ -2190,7 +2192,7 @@ endmodule
 
 //this one's used for MuxA and MuxC
 // module Multiplexer8x3_4(output reg [3:0] Q, input [3:0] I0, I1, I2, I3, I4, I5, I6, I7, input [1:0] S);
-module Multiplexer8x3_4(output reg [3:0] Q, input [3:0] I0, I1, I2, I3, I4, input [2:0] S); //using this one hasta que tengamos que usar las otras entradas
+module Multiplexer8x3_4(output reg [3:0] Q, input [3:0] I0, I1, I2, I3, I4, I5, input [2:0] S); //using this one hasta que tengamos que usar las otras entradas
     
     always @ (*)
     begin
@@ -2200,6 +2202,7 @@ module Multiplexer8x3_4(output reg [3:0] Q, input [3:0] I0, I1, I2, I3, I4, inpu
             4'h2: Q <= I2;
             4'h3: Q <= I3;
             4'h4: Q <= I4;
+            4'h5: Q <= I5;
         endcase
         end
     
