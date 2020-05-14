@@ -126,31 +126,31 @@ initial begin //initial to read content of memory after precharging
 #1
     $display("----- Memory contents after precharging ----- time:%0d", $time);                       
     Adr = 7'b0000000;
-    repeat (52) begin
+    repeat (200) begin
         #1;
         $display("__RAM_Precharge: data in address %d = %x, time: %0d", Adr, RAM.Mem[Adr], $time);
         #1;
         Adr = Adr + 1;
         #1;
-    end                                     
+    end                              
     $display("----- END PRECHARGE INFO ----- time:%0d", $time);                                               
 end 
 
 initial begin
-#160 //so that clock starts when precharge tasks are done 
+#600 //so that clock starts when precharge tasks are done 
   Clk <= 1'b0;
   repeat(515) #5 Clk = ~Clk;
 end
 
 initial begin
-#160 //so that reset starts when precharge tasks are done 
+#600 //so that reset starts when precharge tasks are done 
   reset = 1'b1;
 #5 reset = ~reset;
 end
 
 
 initial begin //BEGIN PRINT
-#160 //delay to wait for precharge things
+#600 //delay to wait for precharge things
 $display("\n~~~~~~~~Initiating ARM Simulation~~~~~~~~\n");
 // $monitor("%h    %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b",IR,aluOut,OP,current_state,FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MD, ME, MA, MB, MC,Clk,reset, $time); 
     // $monitor("IR:%x, Dout:%x, alu:%x, sizeOP:%b, State:%0d, RFld:%b, MA:%b, MB:%b, MC:%b, MD:%b, ME:%b, OP:%b, IRld:%b, MARld:%b, MDRld:%b, RW:%b, MOV:%b, MOC:%b, Cond:%b, Clk:%b, rst:%b, t:%0d", IRBus, DataOut, aluOut, sizeOP, current_state, RFld, MA, MB, MC, MD, ME, OP4OP0, IRld, MARld, MDRld, R_W, MOV, MOC, Cond, Clk, reset, $time);
@@ -160,13 +160,13 @@ end
 
 initial begin //initial test instructions
 // #551
-#2740
+#3340
 // #1470
     Adr = 7'b0000000; //Address of instruction being tested 
     EfAdr = 0;
     $display("----- Memory contents after simulating ----- time:%0d", $time);                       
 
-    repeat (64) begin 
+    repeat (128) begin 
         #1;
         $display("__RAM_After_Simulating: word in address %0d = %b, time:%0d", EfAdr, {RAM.Mem[EfAdr], RAM.Mem[EfAdr+1], RAM.Mem[EfAdr+2], RAM.Mem[EfAdr+3]}, $time);
         #1;
@@ -629,6 +629,85 @@ case(Instruction[27:25])
                 end   
                //shifter operand registar special case 
             else if(Instruction[11:4]==8'b00000000)
+                begin
+                    if(Instruction[20]==1'b0)
+                        begin
+                            case(Instruction[24:21])
+                            //case de opcode de la instruccion
+                            //AND
+                            4'b0000:    Out = 10'b0111110100;
+                            //EOR
+                            4'b0001:    Out = 10'b0111111000;
+                            //SUB
+                            4'b0010:    Out = 10'b0111101001;
+                            //RSB
+                            4'b0011:    Out = 10'b0111101100;
+                            //ADD
+                            4'b0100:    Out = 10'b0000000111;
+                            //ADC
+                            4'b0101:    Out = 10'b0111101110;
+                            //SBC
+                            4'b0110:    Out = 10'b0111110000;
+                            //RSC
+                            4'b0111:    Out = 10'b0111110010;
+                            //TST
+                            4'b1000:    Out = 10'b0111100111;
+                            //TEQ
+                            4'b1001:    Out = 10'b0111101000;
+                            //CMP
+                            4'b1010:    Out = 10'b0111100101;
+                            //CMN
+                            4'b1011:    Out = 10'b0111100110;
+                            //ORR
+                            4'b1100:    Out = 10'b0111111010;
+                            //MOV
+                            4'b1101:    Out = 10'b0111100010;
+                            //BIC
+                            4'b1110:    Out = 10'b0111110110;
+                            //MVN
+                            4'b1111:    Out = 10'b0111100100;
+                            endcase
+                        end
+                    else
+                        begin
+                            case(Instruction[24:21])
+                            //case de opcode de la instruccion
+                            //ANDS
+                            4'b0000:    Out = 10'b0111110011;
+                            //EORS
+                            4'b0001:    Out = 10'b0111110111;
+                            //SUBS
+                            4'b0010:    Out = 10'b0111101010;
+                            //RSBS
+                            4'b0011:    Out = 10'b0111101011;
+                            //ADDS
+                            4'b0100:    Out = 10'b0000000101;
+                            //ADCS
+                            4'b0101:    Out = 10'b0111101101;
+                            //SBCS
+                            4'b0110:    Out = 10'b0111101111;
+                            //RSCS
+                            4'b0111:    Out = 10'b0111110001;
+                            //TST
+                            4'b1000:    Out = 10'b0111100111;
+                            //TEQ
+                            4'b1001:    Out = 10'b0111101000;
+                            //CMP
+                            4'b1010:    Out = 10'b0111100101;
+                            //CMN
+                            4'b1011:    Out = 10'b0111100110;
+                            //ORRS
+                            4'b1100:    Out = 10'b0111111001;
+                            //MOVS
+                            4'b1101:    Out = 10'b0111100001;
+                            //BICS
+                            4'b1110:    Out = 10'b0111110101;
+                            //MVNS
+                            4'b1111:    Out = 10'b0111100011;
+                            endcase
+                        end    
+                end
+            else if(Instruction[6:4]==3'b100 || Instruction[6:4]==3'b110 || Instruction[6:4]==3'b010 || Instruction[6:4]==3'b000)
                 begin
                     if(Instruction[20]==1'b0)
                         begin
@@ -1878,36 +1957,119 @@ always @(*) begin
     
     case(Sel)
     //Arithmetic Operations
-    5'b00000: Out = A & B;
-    5'b00001: Out = A ^ B;
-    5'b00010: Out = A - B;
-    5'b00011: Out = B - A;
-    5'b00100:  {Carry,Out} = A + B; //suma    
-    5'b00101:  {Carry,Out} = A + B + Cin; //suma con carry
-    5'b00110:   Out = A - B - (!Cin);
-    5'b00111:   Out = B - A - (!Cin);
+    5'b00000: 
+        begin
+            Out = A & B;
+        end
+    5'b00001: 
+        begin
+            Out = A ^ B;
+        end
+    5'b00010: 
+        begin
+            Carry = 0;
+            {Carry,Out} = A - B;
+            Vflow = ((~Out[31]&A[31]&~B[31]) || (Out[31] & ~A[31] & B[31])); 
+        end
+    5'b00011: 
+        begin
+            Carry = 0;
+            {Carry,Out} = B - A;
+            Vflow = ((~Out[31]&~A[31]&B[31]) || (Out[31] & A[31] & ~B[31])); 
+        end
+    5'b00100:  
+        begin
+            Carry = 0;
+            {Carry,Out} = A + B; //suma
+            Vflow = ((~Out[31]&A[31]&B[31]) || (Out[31] & ~A[31] & ~B[31])); 
+        end
+    5'b00101:  
+        begin
+            Carry = 0;
+            {Carry,Out} = A + B + Cin; //suma con carry
+            Vflow = ((~Out[31]&A[31]&B[31]) || (Out[31] & ~A[31] & ~B[31])); 
+        end
+    5'b00110: 
+        begin  
+            Carry = 0;
+            Out = A - B - (!Cin);
+        end
+    5'b00111: 
+        begin
+            Carry = 0;
+            Out = B - A - (!Cin);
+            Vflow = ((~Out[31]&~A[31]&B[31]) || (Out[31] & A[31] & ~B[31])); 
+        end
    
    //Update Flags
-    5'b01000:  Out = A & B; //bitwise and   
-    5'b01001:  Out = A ^ B; // xor
-    5'b01010:  Out = A - B;  //resta
-    5'b01011:  {Carry,Out} = A + B;
-    5'b01100:   Out = A | B;
-    5'b01101:   Out = B;
-    5'b01110:   Out = A & (!B);
-    5'b01111:   Out = !B;
-    5'b10000:   Out = A;
-    5'b10001:   Out = A + 4;
-    5'b10010:   Out = A + B + 4;
-    5'b10011:  Out = A >>1; // right shift
-    5'b10100:  Out = A <<1; // left shift
-    5'b10101:   Out = A - B + 4;
-    5'b10110: Out = B << 1;
+    5'b01000:
+        begin
+            Out = A & B; //bitwise and
+        end 
+    5'b01001:  
+        begin
+            Out = A ^ B; // xor
+        end
+    5'b01010:  
+        begin
+            Out = A - B;  //resta
+            Vflow = ((~Out[31]&A[31]&~B[31]) || (Out[31] & ~A[31] & B[31])); 
+        end
+    5'b01011: 
+        begin 
+            {Carry,Out} = A + B;
+            Vflow = ((~Out[31]&A[31]&B[31]) || (Out[31] & ~A[31] & ~B[31])); 
+        end
+    5'b01100:  
+        begin 
+            Out = A | B;
+        end
+    5'b01101: 
+        begin  
+            Out = B;
+        end
+    5'b01110:
+        begin   
+            Out = A & (!B);
+        end
+    5'b01111:   
+        begin
+            Out = !B;
+        end
+    5'b10000:   
+        begin
+            Out = A;
+        end
+    5'b10001: 
+        begin  
+            Out = A + 4;
+        end
+    5'b10010:  
+        begin 
+            Out = A + B + 4;
+            Vflow = ((~Out[31]&A[31]&B[31]) || (Out[31] & ~A[31] & ~B[31])); 
+        end
+    5'b10011:  
+        begin
+            Out = A >>1; // right shift
+        end
+    5'b10100:  
+        begin
+            Out = A <<1; // left shift
+        end
+    5'b10101:  
+        begin 
+            Out = A - B + 4;
+            Vflow = ((~Out[31]&A[31]&~B[31]) || (Out[31] & ~A[31] & B[31])); 
+        end
+    5'b10110: 
+        begin
+            Out = B << 1;
+        end
     endcase
     
      Zero = (~|Out); //bitwise or
      Neg = (Out[31] == 1);
-     Vflow = ((~Out[31]&A[31]&B[31]) || (Out[31] & ~A[31] & ~B[31])); 
     end
     
 
@@ -1922,7 +2084,7 @@ wire [15:0] BDselect;
 wire [31:0] I0, I1, I2, I3, I4, I5, I6, I7, I8, I9, I10, I11, I12, I13, I14, I15;
 
 always@(I15, rfLd) begin
-    $display("\n~~~ Register File: PC, R0, R1, R2, R3, R4, R5, R14 ~~~\n__R0: %b, Clock:%b, t:%0d\n__PC: %b, Clock:%b, t:%0d\n__R1: %b, Clock:%b, t:%0d\n__R2: %b, Clock:%b, t:%0d\n__R3: %b, Clock:%b, t:%0d\n__R4: %b, Clock:%b, t:%0d\n__R5: %b, Clock:%b, t:%0d\n__R14: %b, Clock:%b, t:%0d\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n", I0, clk, $time, I15, clk, $time, I1, clk, $time, I2, clk, $time, I3, clk, $time, I4, clk, $time, I5, clk, $time, I14, clk, $time);
+    $display("\n~~~ Register File: PC, R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13,  R14 ~~~\n__R0: %b, Clock:%b, t:%0d\n__PC: %b, Clock:%b, t:%0d\n__R1: %b, Clock:%b, t:%0d\n__R2: %b, Clock:%b, t:%0d\n__R3: %b, Clock:%b, t:%0d\n__R4: %b, Clock:%b, t:%0d\n__R5: %b, Clock:%b, t:%0d\n__R6: %b, Clock:%b, t:%0d\n__R7: %b, Clock:%b, t:%0d\n__R8: %b, Clock:%b, t:%0d\n__R9: %b, Clock:%b, t:%0d\n__R10: %b, Clock:%b, t:%0d\n__R11: %b, Clock:%b, t:%0d\n__R12: %b, Clock:%b, t:%0d\n__R13: %b, Clock:%b, t:%0d\n__R14: %b, Clock:%b, t:%0d\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n", I0, clk, $time, I15, clk, $time, I1, clk, $time, I2, clk, $time, I3, clk, $time, I4, clk, $time, I5, clk, $time, I6, clk, $time,I7, clk, $time, I8, clk, $time,I9, clk, $time, I10, clk, $time, I11, clk, $time, I12, clk, $time, I13, clk, $time, I14, clk, $time);
 end
 
 // initial begin 
@@ -2327,7 +2489,7 @@ endmodule
 
 module shift_sign_extender(output reg [31:0] extender_out, output reg carry, input [31:0] instruction, B, input Cin);
 
-reg [7:0] temp;
+reg [31:0] temp;
 
 always @(*) 
 begin
@@ -2339,12 +2501,6 @@ begin
                 begin
                 extender_out = instruction[7:0];
                 carry = Cin;
-                end
-            else
-                begin
-                    temp = instruction[7:0];
-                    extender_out = {temp,temp} >>(2*{instruction[11:8]});
-                    carry = extender_out[31];
                 end
         end 
     //shift by immediate shifter opperand
@@ -2395,15 +2551,16 @@ begin
                     end
                     else        
                         begin
-                        extender_out = $signed(B) >>>instruction[11:7];
+                        extender_out = $signed(B) >>> instruction[11:7];
                         carry = B[instruction[11:7]-1];
                         end
                 end
             else if(instruction[6:5]== 2'b11)
                     begin
-                         extender_out =  B >>instruction[11:7];
-                         carry = B[instruction[11:7]-1];
-                    end
+                    temp = B;
+                    extender_out = {temp,temp} >> instruction[11:7];
+                    carry = extender_out[31];
+                end
         end
         else if(instruction[4]==1'b1 && instruction[7]==1'b1 && instruction[22:21]==2'b10 && instruction[24]== 1'b1)       
                 extender_out = (instruction[11:8]<<4) | instruction[3:0]; 
