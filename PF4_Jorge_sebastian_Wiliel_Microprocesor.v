@@ -77,7 +77,7 @@ RegisterFile RF(PA, PB, muxKOut, A, muxFOut, C, Clk, RFld);
 alu_32 ALU(aluOut, ALU_flags[3], ALU_flags[2], ALU_flags[1], ALU_flags[0], muxGOut, AluB, OP[4:0], FROut[3]);
 ram512x8 RAM(DataOut, MOC, MOV, R_W, Address, mdrOut, sizeOP);
 ConditionTester condition_tester(Cond, FROut[3], FROut[2], FROut[1], FROut[0], muxJOut); 
-shift_sign_extender SASExtender(saseOut, ALU_flags[3], IRBus, PB, FROut[3]);
+shift_sign_extender SASExtender(saseOut, IRBus, PB, FROut[3]);
 Adder_4 adder4(adder4Out, IRBus[15:12]);
 MultiRegEncoder multireg_encoder(multiencOut, multiregOut);
 DecInstrAdder decinstr_adder(decinstrAdderOut, fullregOut);
@@ -2490,8 +2490,8 @@ endmodule
 
 ////////////// BEGIN SHIFTER SIGN EXTENDER
 
-module shift_sign_extender(output reg [31:0] extender_out, output reg carry, input [31:0] instruction, B, input Cin);
-
+// module shift_sign_extender(output reg [31:0] extender_out, output reg carry, input [31:0] instruction, B, input Cin);
+module shift_sign_extender(output reg [31:0] extender_out, input [31:0] instruction, B, input Cin);
 reg [31:0] temp;
 
 always @(*) 
@@ -2503,7 +2503,7 @@ begin
             if(instruction[11:8]==4'b0000)
                 begin
                 extender_out = instruction[7:0];
-                carry = Cin;
+                // carry = Cin;
                 end
         end 
     //shift by immediate shifter opperand
@@ -2516,12 +2516,12 @@ begin
                 if(instruction[11:7] == 5'b00000)
                 begin
                     extender_out = B;
-                    carry = Cin;
+                    // carry = Cin;
                 end
                 else
                     begin
                         extender_out = B <<instruction[11:7];
-                        carry = B[32-instruction[11:7]];
+                        // carry = B[32-instruction[11:7]];
                     end
             end 
 
@@ -2530,12 +2530,12 @@ begin
                     if(instruction[11:7]==5'b00000)
                         begin
                             extender_out = 32'b0;
-                            carry = B[31];
+                            // carry = B[31];
                         end
                     else
                         begin
                             extender_out = B >>instruction[11:7];
-                            carry = B[instruction[11:7]-1];
+                            // carry = B[instruction[11:7]-1];
                         end
                 end
             else if(instruction[6:5]==2'b10)
@@ -2544,25 +2544,25 @@ begin
                         if(B[31]==0)
                             begin
                                 extender_out = 32'b0;
-                                carry = B[31];
+                                // carry = B[31];
                             end
                         else
                             begin
                                 extender_out = 32'hFFFFFFFF;
-                                carry = B[31];
+                                // carry = B[31];
                             end
                     end
                     else        
                         begin
                         extender_out = $signed(B) >>> instruction[11:7];
-                        carry = B[instruction[11:7]-1];
+                        // carry = B[instruction[11:7]-1];
                         end
                 end
             else if(instruction[6:5]== 2'b11)
                     begin
                     temp = B;
                     extender_out = {temp,temp} >> instruction[11:7];
-                    carry = extender_out[31];
+                    // carry = extender_out[31];
                 end
         end
         else if(instruction[4]==1'b1 && instruction[7]==1'b1 && instruction[22:21]==2'b10 && instruction[24]== 1'b1)       
