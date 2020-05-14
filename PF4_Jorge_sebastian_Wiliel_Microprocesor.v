@@ -1957,36 +1957,119 @@ always @(*) begin
     
     case(Sel)
     //Arithmetic Operations
-    5'b00000: Out = A & B;
-    5'b00001: Out = A ^ B;
-    5'b00010: Out = A - B;
-    5'b00011: Out = B - A;
-    5'b00100:  {Carry,Out} = A + B; //suma    
-    5'b00101:  {Carry,Out} = A + B + Cin; //suma con carry
-    5'b00110:   Out = A - B - (!Cin);
-    5'b00111:   Out = B - A - (!Cin);
+    5'b00000: 
+        begin
+            Out = A & B;
+        end
+    5'b00001: 
+        begin
+            Out = A ^ B;
+        end
+    5'b00010: 
+        begin
+            Carry = 0;
+            {Carry,Out} = A - B;
+            Vflow = ((~Out[31]&A[31]&~B[31]) || (Out[31] & ~A[31] & B[31])); 
+        end
+    5'b00011: 
+        begin
+            Carry = 0;
+            {Carry,Out} = B - A;
+            Vflow = ((~Out[31]&~A[31]&B[31]) || (Out[31] & A[31] & ~B[31])); 
+        end
+    5'b00100:  
+        begin
+            Carry = 0;
+            {Carry,Out} = A + B; //suma
+            Vflow = ((~Out[31]&A[31]&B[31]) || (Out[31] & ~A[31] & ~B[31])); 
+        end
+    5'b00101:  
+        begin
+            Carry = 0;
+            {Carry,Out} = A + B + Cin; //suma con carry
+            Vflow = ((~Out[31]&A[31]&B[31]) || (Out[31] & ~A[31] & ~B[31])); 
+        end
+    5'b00110: 
+        begin  
+            Carry = 0;
+            Out = A - B - (!Cin);
+        end
+    5'b00111: 
+        begin
+            Carry = 0;
+            Out = B - A - (!Cin);
+            Vflow = ((~Out[31]&~A[31]&B[31]) || (Out[31] & A[31] & ~B[31])); 
+        end
    
    //Update Flags
-    5'b01000:  Out = A & B; //bitwise and   
-    5'b01001:  Out = A ^ B; // xor
-    5'b01010:  Out = A - B;  //resta
-    5'b01011:  {Carry,Out} = A + B;
-    5'b01100:   Out = A | B;
-    5'b01101:   Out = B;
-    5'b01110:   Out = A & (!B);
-    5'b01111:   Out = !B;
-    5'b10000:   Out = A;
-    5'b10001:   Out = A + 4;
-    5'b10010:   Out = A + B + 4;
-    5'b10011:  Out = A >>1; // right shift
-    5'b10100:  Out = A <<1; // left shift
-    5'b10101:   Out = A - B + 4;
-    5'b10110: Out = B << 1;
+    5'b01000:
+        begin
+            Out = A & B; //bitwise and
+        end 
+    5'b01001:  
+        begin
+            Out = A ^ B; // xor
+        end
+    5'b01010:  
+        begin
+            Out = A - B;  //resta
+            Vflow = ((~Out[31]&A[31]&~B[31]) || (Out[31] & ~A[31] & B[31])); 
+        end
+    5'b01011: 
+        begin 
+            {Carry,Out} = A + B;
+            Vflow = ((~Out[31]&A[31]&B[31]) || (Out[31] & ~A[31] & ~B[31])); 
+        end
+    5'b01100:  
+        begin 
+            Out = A | B;
+        end
+    5'b01101: 
+        begin  
+            Out = B;
+        end
+    5'b01110:
+        begin   
+            Out = A & (!B);
+        end
+    5'b01111:   
+        begin
+            Out = !B;
+        end
+    5'b10000:   
+        begin
+            Out = A;
+        end
+    5'b10001: 
+        begin  
+            Out = A + 4;
+        end
+    5'b10010:  
+        begin 
+            Out = A + B + 4;
+            Vflow = ((~Out[31]&A[31]&B[31]) || (Out[31] & ~A[31] & ~B[31])); 
+        end
+    5'b10011:  
+        begin
+            Out = A >>1; // right shift
+        end
+    5'b10100:  
+        begin
+            Out = A <<1; // left shift
+        end
+    5'b10101:  
+        begin 
+            Out = A - B + 4;
+            Vflow = ((~Out[31]&A[31]&~B[31]) || (Out[31] & ~A[31] & B[31])); 
+        end
+    5'b10110: 
+        begin
+            Out = B << 1;
+        end
     endcase
     
      Zero = (~|Out); //bitwise or
      Neg = (Out[31] == 1);
-     Vflow = ((~Out[31]&A[31]&B[31]) || (Out[31] & ~A[31] & ~B[31])); 
     end
     
 
