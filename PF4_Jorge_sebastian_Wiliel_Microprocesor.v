@@ -156,7 +156,7 @@ $display("\n~~~~~~~~Initiating ARM Simulation~~~~~~~~\n");
 // $monitor("%h    %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b",IR,aluOut,OP,current_state,FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MD, ME, MA, MB, MC,Clk,reset, $time); 
     // $monitor("IR:%x, Dout:%x, alu:%x, sizeOP:%b, State:%0d, RFld:%b, MA:%b, MB:%b, MC:%b, MD:%b, ME:%b, OP:%b, IRld:%b, MARld:%b, MDRld:%b, RW:%b, MOV:%b, MOC:%b, Cond:%b, Clk:%b, rst:%b, t:%0d", IRBus, DataOut, aluOut, sizeOP, current_state, RFld, MA, MB, MC, MD, ME, OP4OP0, IRld, MARld, MDRld, R_W, MOV, MOC, Cond, Clk, reset, $time);
     // $monitor("IR:%x, Dout:%x, alu:%x, MGout:%x, sOP:%b, State:%0d, RFld:%b, MA:%b, MB:%b, MC:%b, MD:%b, ME:%b, MJ:%b, MG:%b, OP:%b, MARld:%b, MDRld:%b, RW:%b, MOV:%b, MOC:%b, Cond:%b, Clk:%b, t:%0d", IRBus, DataOut, aluOut, muxGOut, sizeOP, current_state, RFld, MA, MB, MC, MD, ME, MJ, MG, OP4OP0, MARld, MDRld, R_W, MOV, MOC, Cond, Clk, $time);
-    $monitor("State:%d, FROut: %b, IR:%b, MARout:%0d, RAMout:%0d, Cond:%b, Clk:%b, t:%0d", current_state, FROut, IRBus, Address, DataOut, Cond, Clk, $time);
+    $monitor("FROut: %b, IR:%b, MARout:%0d, RAMout:%0d, Cond:%b, Clk:%b, t:%0d",FROut, IRBus, Address, DataOut, Cond, Clk, $time);
 end
 
 initial begin //initial test instructions
