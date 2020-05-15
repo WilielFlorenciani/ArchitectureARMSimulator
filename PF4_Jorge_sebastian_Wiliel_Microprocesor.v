@@ -156,10 +156,10 @@ $display("\n~~~~~~~~Initiating ARM Simulation~~~~~~~~\n");
 // $monitor("%h    %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b  %b",IR,aluOut,OP,current_state,FRld, RFld, IRld, MARld, MDRld, R_W, MOV, MD, ME, MA, MB, MC,Clk,reset, $time); 
     // $monitor("IR:%x, Dout:%x, alu:%x, sizeOP:%b, State:%0d, RFld:%b, MA:%b, MB:%b, MC:%b, MD:%b, ME:%b, OP:%b, IRld:%b, MARld:%b, MDRld:%b, RW:%b, MOV:%b, MOC:%b, Cond:%b, Clk:%b, rst:%b, t:%0d", IRBus, DataOut, aluOut, sizeOP, current_state, RFld, MA, MB, MC, MD, ME, OP4OP0, IRld, MARld, MDRld, R_W, MOV, MOC, Cond, Clk, reset, $time);
     // $monitor("IR:%x, Dout:%x, alu:%x, MGout:%x, sOP:%b, State:%0d, RFld:%b, MA:%b, MB:%b, MC:%b, MD:%b, ME:%b, MJ:%b, MG:%b, OP:%b, MARld:%b, MDRld:%b, RW:%b, MOV:%b, MOC:%b, Cond:%b, Clk:%b, t:%0d", IRBus, DataOut, aluOut, muxGOut, sizeOP, current_state, RFld, MA, MB, MC, MD, ME, MJ, MG, OP4OP0, MARld, MDRld, R_W, MOV, MOC, Cond, Clk, $time);
-    $monitor("State:%d, FROut: %b, IR:%b, MARout:%0d, RAMout:%0d, Cond:%b, Clk:%b, t:%0d", current_state, FROut, IRBus, Address, DataOut, Cond, Clk, $time);
+    $monitor("FROut: %b, IR:%b, MARout:%0d, RAMout:%0d, Cond:%b, Clk:%b, t:%0d", FROut, IRBus, Address, DataOut, Cond, Clk, $time);
 end
 
-initial begin //initial test instructions
+initial begin //initial test instructionsy
 // #551
 #3340
 // #1470
@@ -1921,7 +1921,7 @@ module Microstore (output reg [57:0] out, output reg [9:0] current_state, input 
         58'b0000000010110000010000000001000001010110100110000000000000, //930
         58'b0000000000100000000000000000000000000000101011011110011100, //931
         58'b0000000001000000001000000000000000000000100110000000000000, //932
-        58'b0000000000000000001000000100001011010001000110000000000000, //933
+        58'b0000000000000000001000000100001011010000000110000000000000, //933
         58'b0000000000000000001000000100010101000100000100000000000001 //934
        };
 
@@ -2339,7 +2339,7 @@ always @(posedge Clk) begin
     if(LE) begin 
         Q <= D;
     end
-    // $display("__MultiRegister: multiregOut:%b, t:%0d", Q, $time);
+    //$display("__MultiRegister: multiregOut:%b, t:%0d", Q, $time);
 end
 endmodule
 
@@ -2410,6 +2410,7 @@ module ram512x8(output reg [31:0] DataOut, output reg MOC, input Enable, input R
                     DataOut[15:8] <= Mem[Address+2];
                     DataOut[7:0] <= Mem[Address+3];
                     MOC <= 1;
+                    //$display("__RAM: read a word, DataOut:%b", DataOut);
                 end
                 else begin //write
                     Mem[Address] <= DataIn[31:24];
@@ -2417,6 +2418,7 @@ module ram512x8(output reg [31:0] DataOut, output reg MOC, input Enable, input R
                     Mem[Address+2] <= DataIn[15:8];
                     Mem[Address+3] <= DataIn[7:0];
                     MOC <= 1;
+                    //$display("__RAM: wrote a word Adr:%0d, Mem:%b", Address, {Mem[Address],Mem[Address+1],Mem[Address+2],Mem[Address+3]});
                 end
             end
             default: begin //default to doubleword if its none of the others
@@ -2700,6 +2702,7 @@ case(RegisterBit)
         Out <= 4'hF;
     end
 endcase
+//$display("__Multiencoder:  Input:%b \t Output:%b", RegisterBit, Out);
 end
 endmodule
 ////////////// END ENCODERMULTI
