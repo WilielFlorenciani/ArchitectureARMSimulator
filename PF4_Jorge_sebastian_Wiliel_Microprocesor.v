@@ -934,20 +934,20 @@ case(Instruction[27:25])
                                     Out = 10'b1011010100; //estado de no update a Rn
                         //Increment before            
                         2'b11:  if(Instruction[21]==1'b1)
-                                    Out = 10'b0; //estado de update Rn //734
+                                    Out = 10'b1011011110; //estado de update Rn //734
                                 else
-                                    Out = 10'b0; //estado de no update Rn
+                                    Out = 10'b1011100111; //estado de no update Rn
                         //Decrement after
                         2'b00:   if(Instruction[21]==1'b1)
                                     Out = 10'b1011110010; //estado de permitir update Rn
                                     // Out = 10'b1011110011; //estado de permitir update Rn //755
                                 else
-                                    Out = 10'b0; //estado de no update Rn
+                                    Out = 10'b1100000100; //estado de no update Rn
                         //Decrement before
                         2'b10:  if(Instruction[21]==1'b1)
-                                    Out = 10'b0; //estado de update Rn
+                                    Out = 10'b1100010101; //estado de update Rn
                                 else
-                                    Out = 10'b0; //estado de no update Rn  
+                                    Out = 10'b1100100111; //estado de no update Rn  
                     endcase
                 end
             else
@@ -956,24 +956,24 @@ case(Instruction[27:25])
                    case (Instruction[24:23])
                         //Increment after
                         2'b01:  if(Instruction[21]==1'b1) //Bit W-permite update a Rn
-                                    Out = 10'b0; //estado de permititr update Rn
+                                    Out = 10'b1100111000; //estado de permititr update Rn
                                 else
-                                    Out = 10'b0; //estado de no update a Rn
+                                    Out = 10'b1101000001; //estado de no update a Rn
                         //Increment before            
                         2'b11:  if(Instruction[21]==1'b1)
-                                    Out = 10'b0; //estado de update Rn
+                                    Out = 10'b1101001011; //estado de update Rn
                                 else
-                                    Out = 10'b0; //estado de no update Rn
+                                    Out = 10'b1101010100; //estado de no update Rn
                         //Decrement after
                         2'b00:   if(Instruction[21]==1'b1)
-                                    Out = 10'b0; //estado de permitir update Rn
+                                    Out = 10'b1101011111; //estado de permitir update Rn
                                 else
-                                    Out = 10'b0; //estado de no update Rn
+                                    Out = 10'b1101110001; //estado de no update Rn
                         //Decrement before
                         2'b10:  if(Instruction[21]==1'b1)
-                                    Out = 10'b0; //estado de update Rn
+                                    Out = 10'b1110000010; //estado de update Rn
                                 else
-                                    Out = 10'b0; //estado de no update Rn  
+                                    Out = 10'b1110010100; //estado de no update Rn  
                     endcase
                    
                 end
