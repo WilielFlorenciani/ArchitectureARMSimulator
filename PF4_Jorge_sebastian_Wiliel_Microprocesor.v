@@ -84,7 +84,7 @@ DecInstrAdder decinstr_adder(decinstrAdderOut, fullregOut);
 DecInstrShifter decinstr_shifter(decinstrShifterOut, fullregOut);
 
 
-Multiplexer8x3_4 MuxA(A, IRBus[19:16], IRBus[15:12], number15, adder4Out, noValue_4, multiencOut, MA);
+Multiplexer8x3_4 MuxA(A, IRBus[19:16], IRBus[15:12], number15, adder4Out, multiencOut, noValue_4, MA);
 Multiplexer8x3_32 MuxB(AluB, PB, saseOut, mdrOut, noValue_32, multiregOut, fullregOut, MB); 
 Multiplexer8x3_4 MuxC(C, IRBus[19:16], IRBus[15:12], number15, adder4Out, multiencOut, number14, MC);
 Multiplexer2x1_5 MuxD(OP,{1'b0, IRBus[24:21]}, OP4OP0, MD);
