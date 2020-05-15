@@ -1961,11 +1961,15 @@ always @(*) begin
     //Arithmetic Operations
     5'b00000: 
         begin
+            Carry = 0;
             Out = A & B;
+            Vflow = ((~Out[31]&A[31]&B[31]) || (Out[31] & ~A[31] & ~B[31]));
         end
     5'b00001: 
         begin
+            Carry = 0;
             Out = A ^ B;
+            Vflow = ((~Out[31]&A[31]&B[31]) || (Out[31] & ~A[31] & ~B[31]));
         end
     5'b00010: 
         begin
@@ -1994,27 +1998,32 @@ always @(*) begin
     5'b00110: 
         begin  
             Carry = 0;
-            Out = A - B - (!Cin);
+            {Carry,Out} = A - B - (!Cin);
+            Vflow = ((~Out[31]&A[31]&~B[31]) || (Out[31] & ~A[31] & B[31]));
         end
     5'b00111: 
         begin
             Carry = 0;
-            Out = B - A - (!Cin);
+            {Carry,Out} = B - A - (!Cin);
             Vflow = ((~Out[31]&~A[31]&B[31]) || (Out[31] & A[31] & ~B[31])); 
         end
    
    //Update Flags
     5'b01000:
         begin
+            Carry = 0;
             Out = A & B; //bitwise and
+            Vflow = ((~Out[31]&A[31]&B[31]) || (Out[31] & ~A[31] & ~B[31]));
         end 
     5'b01001:  
         begin
+            Carry = 0;
             Out = A ^ B; // xor
+            Vflow = ((~Out[31]&A[31]&B[31]) || (Out[31] & ~A[31] & ~B[31]));
         end
     5'b01010:  
         begin
-            Out = A - B;  //resta
+            {Carry,Out} = A - B;  //resta
             Vflow = ((~Out[31]&A[31]&~B[31]) || (Out[31] & ~A[31] & B[31])); 
         end
     5'b01011: 
@@ -2024,27 +2033,38 @@ always @(*) begin
         end
     5'b01100:  
         begin 
+            Carry = 0;
             Out = A | B;
+            Vflow = ((~Out[31]&A[31]&B[31]) || (Out[31] & ~A[31] & ~B[31]));
         end
     5'b01101: 
-        begin  
+        begin
+            Carry = 0;  
             Out = B;
+            Vflow = 0;
         end
     5'b01110:
-        begin   
+        begin
+            Carry = 0;   
             Out = A & (!B);
+            Vflow = ((~Out[31]&A[31]&~B[31]) || (Out[31] & ~A[31] & B[31]));
         end
     5'b01111:   
         begin
+            Carry = 0; 
             Out = !B;
+            Vflow = 0;
         end
     5'b10000:   
         begin
+            Carry = 0; 
             Out = A;
+            
         end
     5'b10001: 
-        begin  
-            Out = A + 4;
+        begin
+            {Carry, Out} = A + 4;
+            Vflow = 0;
         end
     5'b10010:  
         begin 
@@ -2053,20 +2073,20 @@ always @(*) begin
         end
     5'b10011:  
         begin
-            Out = A >>1; // right shift
+            {Carry, Out} = A >>1; // right shift
         end
     5'b10100:  
         begin
-            Out = A <<1; // left shift
+            {Carry, Out} = A <<1; // left shift
         end
     5'b10101:  
         begin 
-            Out = A - B + 4;
+            {Carry, Out} = A - B + 4;
             Vflow = ((~Out[31]&A[31]&~B[31]) || (Out[31] & ~A[31] & B[31])); 
         end
     5'b10110: 
         begin
-            Out = B << 1;
+            {Carry, Out} = B << 1;
         end
     endcase
     
